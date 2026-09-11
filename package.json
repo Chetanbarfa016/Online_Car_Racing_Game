@@ -28,5 +28,9 @@
     "@capacitor/core": "^6.1.2",
     "express": "^4.19.2",
     "socket.io": "^4.7.5"
+  },
+  "devDependencies": {
+    "adm-zip": "^0.6.0",
+    "archiver": "^8.0.0"
   }
 }
