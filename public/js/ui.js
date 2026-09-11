@@ -3,6 +3,8 @@ class UIController {
   constructor(game) {
     this.game = game;
     this.selectedColor = '#ff2a5f';
+    this.selectedModel = 'supercar';
+    this.selectedTrack = 'neon_city';
     this.minimapCanvas = document.getElementById('minimap-canvas');
     this.minimapCtx = this.minimapCanvas ? this.minimapCanvas.getContext('2d') : null;
 
@@ -10,7 +12,20 @@ class UIController {
   }
 
   initEventListeners() {
-    // 1. Car Color Picker
+    // 0. Player Name Input Listener
+    const nameInput = document.getElementById('player-name-input');
+    if (nameInput) {
+      nameInput.addEventListener('input', (e) => {
+        const name = e.target.value.trim() || 'Racer_1';
+        if (this.game.localCar) {
+          this.game.localCar.setPlayerName(name);
+        }
+        const hudName = document.getElementById('hud-player-name');
+        if (hudName) hudName.innerText = name;
+      });
+    }
+
+    // 1. Car Color Picker (12 Colors)
     const colorDots = document.querySelectorAll('.color-dot');
     colorDots.forEach(dot => {
       dot.addEventListener('click', (e) => {
@@ -20,6 +35,55 @@ class UIController {
         if (this.game.localCar) {
           this.game.localCar.setColor(this.selectedColor);
         }
+      });
+    });
+
+    // 1b. Car Model Selector & Dynamic Stats
+    const modelBtns = document.querySelectorAll('.model-btn');
+    modelBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        modelBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.selectedModel = btn.getAttribute('data-model');
+        
+        if (this.game.localCar) {
+          this.game.localCar.setModel(this.selectedModel);
+          this.game.localCar.setColor(this.selectedColor);
+        }
+
+        // Update Stat Bars
+        const stats = {
+          supercar: { speed: '85%', accel: '80%', drift: '90%' },
+          muscle: { speed: '80%', accel: '92%', drift: '96%' },
+          formula1: { speed: '98%', accel: '96%', drift: '78%' },
+          cybertruck: { speed: '75%', accel: '78%', drift: '95%' }
+        }[this.selectedModel];
+
+        if (stats) {
+          document.getElementById('stat-speed').style.width = stats.speed;
+          document.getElementById('stat-accel').style.width = stats.accel;
+          document.getElementById('stat-drift').style.width = stats.drift;
+        }
+      });
+    });
+
+    // 1c. Track / Map Selector
+    const trackCards = document.querySelectorAll('.track-card');
+    trackCards.forEach(card => {
+      card.addEventListener('click', () => {
+        trackCards.forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+        this.selectedTrack = card.getAttribute('data-track');
+        
+        // Live update track in 3D scene
+        if (this.game.track) {
+          this.game.track.init(this.selectedTrack);
+          if (this.game.localCar) {
+            this.game.localCar.position.set(0, 0.46, 0);
+            this.game.localCar.mesh.position.copy(this.game.localCar.position);
+          }
+        }
+        this.showToast(`🗺️ Loaded Map: ${card.querySelector('.track-name').innerText}`);
       });
     });
 
@@ -50,7 +114,7 @@ class UIController {
     if (btnHotspotHost) {
       btnHotspotHost.addEventListener('click', () => {
         const name = document.getElementById('player-name-input').value.trim() || 'Host Racer';
-        this.game.network.createRoom(name, this.selectedColor);
+        this.game.network.createRoom(name, this.selectedColor, this.selectedModel);
       });
     }
 
@@ -69,7 +133,7 @@ class UIController {
         this.showToast(`Connecting to Hotspot Host at ${targetUrl}...`);
         this.game.network.connectToServer(targetUrl);
         setTimeout(() => {
-          this.game.network.quickMatch(name, this.selectedColor);
+          this.game.network.quickMatch(name, this.selectedColor, this.selectedModel);
         }, 800);
       });
     }
@@ -77,7 +141,7 @@ class UIController {
     // 5. Create Room Button (Online Mode)
     document.getElementById('btn-create-room').addEventListener('click', () => {
       const name = document.getElementById('player-name-input').value.trim() || 'Racer';
-      this.game.network.createRoom(name, this.selectedColor);
+      this.game.network.createRoom(name, this.selectedColor, this.selectedModel);
     });
 
     // 6. Join Room Button
@@ -88,13 +152,13 @@ class UIController {
         this.showToast('Please enter a 4-letter Room Code!');
         return;
       }
-      this.game.network.joinRoom(code, name, this.selectedColor);
+      this.game.network.joinRoom(code, name, this.selectedColor, this.selectedModel);
     });
 
     // 7. Quick Match Button
     document.getElementById('btn-quick-match').addEventListener('click', () => {
       const name = document.getElementById('player-name-input').value.trim() || 'Racer';
-      this.game.network.quickMatch(name, this.selectedColor);
+      this.game.network.quickMatch(name, this.selectedColor, this.selectedModel);
     });
 
     // 8. Copy Room Code Button

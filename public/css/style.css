@@ -154,35 +154,129 @@ body, html {
   padding: 10px 12px;
 }
 
-.form-group {
+/* Car Model Selector & Stats */
+.car-model-selector-wrap {
+  margin-bottom: 16px;
   text-align: left;
-  margin-bottom: 14px;
 }
 
-.form-group label, .color-picker-wrap label {
+.car-model-selector-wrap label, .track-selector-wrap label {
   display: block;
   font-size: 0.8rem;
   color: #8fa0b5;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   letter-spacing: 1px;
 }
 
-input[type="text"] {
-  width: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(0, 229, 255, 0.4);
-  color: #fff;
-  padding: 12px 14px;
-  border-radius: 8px;
-  font-family: 'Orbitron', sans-serif;
-  font-size: 1rem;
-  outline: none;
-  transition: 0.2s border;
+.model-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 10px;
 }
 
-input[type="text"]:focus {
+.model-btn {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(0, 229, 255, 0.25);
+  color: #fff;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.model-btn.active {
+  background: linear-gradient(135deg, rgba(255, 42, 95, 0.3), rgba(255, 107, 139, 0.4));
   border-color: #ff2a5f;
-  box-shadow: 0 0 10px rgba(255, 42, 95, 0.4);
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(255, 42, 95, 0.4);
+}
+
+.car-stats-panel {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.68rem;
+  color: #00e5ff;
+  letter-spacing: 1px;
+}
+
+.stat-bar {
+  width: 140px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.stat-bar div {
+  height: 100%;
+  background: linear-gradient(90deg, #00e5ff, #ff2a5f);
+  box-shadow: 0 0 8px #00e5ff;
+  transition: width 0.25s ease;
+}
+
+/* Track / Map Selector */
+.track-selector-wrap {
+  margin-top: 14px;
+  text-align: left;
+}
+
+.track-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.track-card {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.track-card.active {
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.2), rgba(0, 180, 216, 0.3));
+  border-color: #00e5ff;
+  box-shadow: 0 0 14px rgba(0, 229, 255, 0.3);
+}
+
+.track-badge {
+  font-size: 0.65rem;
+  color: #ffea00;
+  font-weight: 900;
+  margin-bottom: 2px;
+}
+
+.track-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.track-card small {
+  font-size: 0.7rem;
+  color: #8fa0b5;
+  font-family: 'Rajdhani', sans-serif;
 }
 
 /* Color Palette Dots */

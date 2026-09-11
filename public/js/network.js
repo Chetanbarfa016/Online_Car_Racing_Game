@@ -110,28 +110,28 @@ class NetworkClient {
     }
   }
 
-  createRoom(playerName, carColor) {
+  createRoom(playerName, carColor, carModel = 'supercar') {
     if (!this.socket || !this.isConnected) {
       this.game.ui.showToast('⚠️ Connecting to server, please wait...');
       return;
     }
-    this.socket.emit('create_room', { playerName, carColor });
+    this.socket.emit('create_room', { playerName, carColor, carModel });
   }
 
-  joinRoom(roomId, playerName, carColor) {
+  joinRoom(roomId, playerName, carColor, carModel = 'supercar') {
     if (!this.socket || !this.isConnected) {
       this.game.ui.showToast('⚠️ Connecting to server, please wait...');
       return;
     }
-    this.socket.emit('join_room', { roomId, playerName, carColor });
+    this.socket.emit('join_room', { roomId, playerName, carColor, carModel });
   }
 
-  quickMatch(playerName, carColor) {
+  quickMatch(playerName, carColor, carModel = 'supercar') {
     if (!this.socket || !this.isConnected) {
       this.game.ui.showToast('⚠️ Connecting to server, please wait...');
       return;
     }
-    this.socket.emit('quick_match', { playerName, carColor });
+    this.socket.emit('quick_match', { playerName, carColor, carModel });
   }
 
   startRace() {

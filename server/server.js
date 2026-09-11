@@ -98,6 +98,16 @@ io.on('connection', (socket) => {
     }
   });
 
+  // 4b. Host Changes Selected Track / Map
+  socket.on('change_track', ({ trackId }) => {
+    const room = roomManager.getRoomBySocket(socket.id);
+    if (!room || room.hostId !== socket.id || room.state !== 'LOBBY') return;
+
+    room.trackId = trackId;
+    io.to(room.id).emit('track_changed', { trackId });
+    io.to(room.id).emit('player_list_updated', roomManager.serializeRoom(room));
+  });
+
   // 5. Host Starts Countdown & Race
   socket.on('start_race', () => {
     const room = roomManager.getRoomBySocket(socket.id);

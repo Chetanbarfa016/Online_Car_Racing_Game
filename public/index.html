@@ -30,22 +30,88 @@
       <!-- Step 1: Profile & Customization -->
       <div id="lobby-profile-section" class="section-card">
         <div class="form-group">
-          <label for="player-name-input">Racer Name</label>
+          <label for="player-name-input">👤 Racer Name</label>
           <input type="text" id="player-name-input" maxlength="12" value="Racer_1" placeholder="Enter your name..." />
         </div>
 
+        <!-- Car Model Selector -->
+        <div class="car-model-selector-wrap">
+          <label>🏎️ Select Car Model</label>
+          <div class="model-buttons" id="model-buttons">
+            <button class="model-btn active" data-model="supercar">
+              <span class="m-icon">🏎️</span>
+              <span class="m-title">Phantom GT</span>
+            </button>
+            <button class="model-btn" data-model="muscle">
+              <span class="m-icon">🚗</span>
+              <span class="m-title">V8 Muscle</span>
+            </button>
+            <button class="model-btn" data-model="formula1">
+              <span class="m-icon">🏎️</span>
+              <span class="m-title">Apex F1</span>
+            </button>
+            <button class="model-btn" data-model="cybertruck">
+              <span class="m-icon">🚙</span>
+              <span class="m-title">Titan 4x4</span>
+            </button>
+          </div>
+          
+          <!-- Car Stats Indicator -->
+          <div class="car-stats-panel" id="car-stats-panel">
+            <div class="stat-row">
+              <span>SPEED</span>
+              <div class="stat-bar"><div id="stat-speed" style="width: 85%;"></div></div>
+            </div>
+            <div class="stat-row">
+              <span>ACCEL</span>
+              <div class="stat-bar"><div id="stat-accel" style="width: 80%;"></div></div>
+            </div>
+            <div class="stat-row">
+              <span>DRIFT</span>
+              <div class="stat-bar"><div id="stat-drift" style="width: 90%;"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Color Palette (12 Colors) -->
         <div class="customizer-row">
           <div class="color-picker-wrap">
-            <label>Car Color</label>
+            <label>🎨 Paint Color Collection</label>
             <div class="color-options" id="color-options">
-              <span class="color-dot active" data-color="#ff2a5f" style="background:#ff2a5f;"></span>
-              <span class="color-dot" data-color="#00e5ff" style="background:#00e5ff;"></span>
-              <span class="color-dot" data-color="#ffea00" style="background:#ffea00;"></span>
-              <span class="color-dot" data-color="#00e676" style="background:#00e676;"></span>
-              <span class="color-dot" data-color="#b388ff" style="background:#b388ff;"></span>
-              <span class="color-dot" data-color="#ff9100" style="background:#ff9100;"></span>
-              <span class="color-dot" data-color="#ffffff" style="background:#ffffff;"></span>
-              <span class="color-dot" data-color="#2979ff" style="background:#2979ff;"></span>
+              <span class="color-dot active" data-color="#ff2a5f" style="background:#ff2a5f;" title="Neon Red"></span>
+              <span class="color-dot" data-color="#00e5ff" style="background:#00e5ff;" title="Cyan"></span>
+              <span class="color-dot" data-color="#ffea00" style="background:#ffea00;" title="Yellow"></span>
+              <span class="color-dot" data-color="#00e676" style="background:#00e676;" title="Lime Green"></span>
+              <span class="color-dot" data-color="#b388ff" style="background:#b388ff;" title="Purple"></span>
+              <span class="color-dot" data-color="#ff9100" style="background:#ff9100;" title="Orange"></span>
+              <span class="color-dot" data-color="#ffffff" style="background:#ffffff;" title="White"></span>
+              <span class="color-dot" data-color="#2979ff" style="background:#2979ff;" title="Royal Blue"></span>
+              <span class="color-dot" data-color="#ffd700" style="background:#ffd700;" title="Gold"></span>
+              <span class="color-dot" data-color="#1e293b" style="background:#1e293b;" title="Matte Black"></span>
+              <span class="color-dot" data-color="#ec4899" style="background:#ec4899;" title="Hot Pink"></span>
+              <span class="color-dot" data-color="#14b8a6" style="background:#14b8a6;" title="Teal"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Map / Track Selector -->
+        <div class="track-selector-wrap">
+          <label>🗺️ Select Racing Track / Map</label>
+          <div class="track-options" id="track-options">
+            <div class="track-card active" data-track="neon_city">
+              <span class="track-badge">🌃 MAP 1</span>
+              <span class="track-name">Neon Cyber City</span>
+              <small>Night Circuit • High Speed</small>
+            </div>
+            <div class="track-card" data-track="desert_canyon">
+              <span class="track-badge">🏜️ MAP 2</span>
+              <span class="track-name">Desert Canyon</span>
+              <small>Sunset Highway • Winding</small>
+            </div>
+            <div class="track-card" data-track="tokyo_circuit">
+              <span class="track-badge">🌉 MAP 3</span>
+              <span class="track-name">Tokyo Drift Bay</span>
+              <small>Coastal Bridge • Technical</small>
             </div>
           </div>
         </div>
@@ -119,8 +185,12 @@
 
   <!-- IN-GAME HUD OVERLAY -->
   <div id="game-hud" style="display: none;">
-    <!-- Top Bar: Rank, Lap, Time -->
+    <!-- Top Bar: Player Name, Rank, Lap, Time -->
     <div class="hud-top-bar">
+      <div class="hud-card hud-player">
+        <span class="hud-label">RACER</span>
+        <span id="hud-player-name" class="hud-value" style="font-size: 1.05rem; color:#00e5ff;">Racer_1</span>
+      </div>
       <div class="hud-card hud-rank">
         <span class="hud-label">POSITION</span>
         <span id="hud-rank-text" class="hud-value">1<small>/1</small></span>

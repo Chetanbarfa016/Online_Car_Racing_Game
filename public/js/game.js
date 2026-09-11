@@ -195,6 +195,11 @@ class Game {
   }
 
   setupRoomCars(roomData) {
+    // Load Selected Room Track
+    if (roomData.trackId && this.track.trackId !== roomData.trackId) {
+      this.track.init(roomData.trackId);
+    }
+
     this.network.remotePlayers.forEach(c => this.scene.remove(c.mesh));
     this.network.remotePlayers.clear();
 
@@ -202,7 +207,9 @@ class Game {
 
     roomData.players.forEach(p => {
       if (p.id === localSocketId) {
+        this.localCar.setModel(p.carModel || 'supercar');
         this.localCar.setColor(p.color);
+        this.localCar.setPlayerName(p.name || 'Racer');
         this.localCar.position.set(p.position.x, p.position.y, p.position.z);
         this.localCar.rotation.y = p.rotation.y;
         this.localCar.speed = 0;
@@ -211,8 +218,11 @@ class Game {
         this.localCar.finished = false;
         this.localCar.mesh.position.copy(this.localCar.position);
         this.localCar.mesh.rotation.set(0, p.rotation.y, 0);
+
+        const hudName = document.getElementById('hud-player-name');
+        if (hudName) hudName.innerText = p.name || 'Racer';
       } else {
-        const remoteCar = new Car(this.scene, p.color, false);
+        const remoteCar = new Car(this.scene, p.color, false, p.carModel || 'supercar', p.name || 'Racer');
         remoteCar.position.set(p.position.x, p.position.y, p.position.z);
         remoteCar.mesh.position.copy(remoteCar.position);
         remoteCar.mesh.rotation.y = p.rotation.y;
