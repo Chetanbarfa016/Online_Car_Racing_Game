@@ -1,0 +1,389 @@
+// High-End Cyberpunk 3D Racing Track, Neon City Skyline, Animated Turn Chevrons & Traffic Gantry
+class RacingTrack {
+  constructor(scene) {
+    this.scene = scene;
+    this.trackWidth = 24;
+    this.checkpoints = [];
+    this.trackCurve = null;
+    this.roadMesh = null;
+    this.animatedChevrons = [];
+    this.startTrafficLights = [];
+    
+    // Circuit Waypoints (High-Speed Cyber Neon Grand Prix)
+    this.waypoints = [
+      new THREE.Vector3(0, 0, 0),        // Start / Finish Line
+      new THREE.Vector3(0, 0, 140),      // Main Straight
+      new THREE.Vector3(45, 0, 210),     // Turn 1 Fast Sweeper
+      new THREE.Vector3(130, 0, 210),    // Short Bridge Straight
+      new THREE.Vector3(200, 0, 140),    // Turn 2
+      new THREE.Vector3(200, 0, 30),     // Sector 2 Straight
+      new THREE.Vector3(140, 0, -60),    // Hairpin Entry
+      new THREE.Vector3(80, 0, -95),     // Hairpin Apex
+      new THREE.Vector3(0, 0, -140),     // S-Curve 1
+      new THREE.Vector3(-70, 0, -100),   // S-Curve 2
+      new THREE.Vector3(-135, 0, -40),   // Turn 3
+      new THREE.Vector3(-170, 0, 50),    // High-Speed Back Straight
+      new THREE.Vector3(-145, 0, 160),   // Sweeper Turn
+      new THREE.Vector3(-70, 0, 190),    // Final Chicane Entry
+      new THREE.Vector3(-25, 0, 90),     // Final Chicane Exit
+      new THREE.Vector3(0, 0, 0)         // Loop back to Start
+    ];
+
+    this.init();
+  }
+
+  init() {
+    // 1. CatmullRom Curve
+    this.trackCurve = new THREE.CatmullRomCurve3(this.waypoints, true, 'catmullrom', 0.15);
+    
+    // 2. High-Res Road Mesh & Apex Curbs
+    this.buildRoadMesh();
+    
+    // 3. Checkpoints
+    this.buildCheckpoints();
+
+    // 4. Start/Finish Gantry with Working LED Lights
+    this.buildStartFinishGantry();
+
+    // 5. Animated Corner Chevrons (Flashing Directional Arrows)
+    this.buildAnimatedChevrons();
+
+    // 6. Neon City Skyline & Holographic Billboards
+    this.buildCyberpunkCity();
+  }
+
+  buildRoadMesh() {
+    const pointsCount = 450;
+    const points = this.trackCurve.getPoints(pointsCount);
+
+    const roadGeometry = new THREE.BufferGeometry();
+    const positions = [];
+    const uvs = [];
+    const normals = [];
+
+    const halfWidth = this.trackWidth / 2;
+
+    for (let i = 0; i <= pointsCount; i++) {
+      const idx = i % pointsCount;
+      const point = points[idx];
+      const nextIdx = (idx + 1) % pointsCount;
+      const nextPoint = points[nextIdx];
+
+      const tangent = new THREE.Vector3().subVectors(nextPoint, point).normalize();
+      const up = new THREE.Vector3(0, 1, 0);
+      const right = new THREE.Vector3().crossVectors(tangent, up).normalize();
+
+      const left = new THREE.Vector3().copy(point).addScaledVector(right, -halfWidth);
+      const rightSide = new THREE.Vector3().copy(point).addScaledVector(right, halfWidth);
+
+      left.y = 0.05;
+      rightSide.y = 0.05;
+
+      positions.push(left.x, left.y, left.z);
+      positions.push(rightSide.x, rightSide.y, rightSide.z);
+
+      const u = i / 8;
+      uvs.push(0, u);
+      uvs.push(1, u);
+
+      normals.push(0, 1, 0);
+      normals.push(0, 1, 0);
+    }
+
+    const indices = [];
+    for (let i = 0; i < pointsCount; i++) {
+      const v1 = i * 2;
+      const v2 = v1 + 1;
+      const v3 = (i + 1) * 2;
+      const v4 = v3 + 1;
+
+      indices.push(v1, v2, v3);
+      indices.push(v2, v4, v3);
+    }
+
+    roadGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    roadGeometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    roadGeometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+    roadGeometry.setIndex(indices);
+
+    // Procedural High-Res Asphalt Texture
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 1024;
+    const ctx = canvas.getContext('2d');
+
+    // Dark Asphalt base
+    ctx.fillStyle = '#141720';
+    ctx.fillRect(0, 0, 1024, 1024);
+
+    // Surface Grain Noise
+    for (let j = 0; j < 6000; j++) {
+      ctx.fillStyle = Math.random() > 0.5 ? '#1e222e' : '#0e1017';
+      ctx.fillRect(Math.random() * 1024, Math.random() * 1024, 2, 2);
+    }
+
+    // Outer Neon Glowing Boundary Lines
+    ctx.fillStyle = '#00e5ff';
+    ctx.fillRect(20, 0, 16, 1024);
+    ctx.fillRect(988, 0, 16, 1024);
+
+    // Inner White Road Lines
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(60, 0, 8, 1024);
+    ctx.fillRect(956, 0, 8, 1024);
+
+    // Center Dashed Gold Line
+    ctx.fillStyle = '#ffea00';
+    for (let y = 0; y < 1024; y += 128) {
+      ctx.fillRect(504, y, 16, 72);
+    }
+
+    const roadTexture = new THREE.CanvasTexture(canvas);
+    roadTexture.wrapS = THREE.RepeatWrapping;
+    roadTexture.wrapT = THREE.RepeatWrapping;
+    roadTexture.repeat.set(1, 45);
+
+    const roadMaterial = new THREE.MeshStandardMaterial({
+      map: roadTexture,
+      roughness: 0.75,
+      metalness: 0.25
+    });
+
+    this.roadMesh = new THREE.Mesh(roadGeometry, roadMaterial);
+    this.roadMesh.receiveShadow = true;
+    this.scene.add(this.roadMesh);
+
+    // Build Red/White Apex Curbs & Guardrails
+    this.buildCurbsAndGuardrails(points);
+  }
+
+  buildCurbsAndGuardrails(points) {
+    const railMat = new THREE.MeshStandardMaterial({
+      color: 0x00f0ff,
+      emissive: 0x00e5ff,
+      emissiveIntensity: 0.4,
+      metalness: 0.85,
+      roughness: 0.15
+    });
+
+    const curbMatRed = new THREE.MeshStandardMaterial({ color: 0xff0033, roughness: 0.6 });
+    const curbMatWhite = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 });
+
+    const halfW = (this.trackWidth / 2);
+
+    for (let i = 0; i < points.length; i += 3) {
+      const p1 = points[i];
+      const p2 = points[(i + 1) % points.length];
+      const tangent = new THREE.Vector3().subVectors(p2, p1).normalize();
+      const up = new THREE.Vector3(0, 1, 0);
+      const right = new THREE.Vector3().crossVectors(tangent, up).normalize();
+
+      // Left & Right Guardrail Posts
+      [-halfW - 1.2, halfW + 1.2].forEach(offset => {
+        const postPos = new THREE.Vector3().copy(p1).addScaledVector(right, offset);
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 1.4, 8), railMat);
+        post.position.set(postPos.x, 0.7, postPos.z);
+        this.scene.add(post);
+      });
+
+      // 3D Alternating Apex Curbs
+      const curbMat = (Math.floor(i / 3) % 2 === 0) ? curbMatRed : curbMatWhite;
+      [-halfW - 0.4, halfW + 0.4].forEach(offset => {
+        const curbPos = new THREE.Vector3().copy(p1).addScaledVector(right, offset);
+        const curb = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.12, 1.8), curbMat);
+        curb.position.set(curbPos.x, 0.1, curbPos.z);
+        const angle = Math.atan2(tangent.x, tangent.z);
+        curb.rotation.y = angle;
+        this.scene.add(curb);
+      });
+    }
+  }
+
+  buildCheckpoints() {
+    const numCheckpoints = 18;
+    for (let i = 0; i < numCheckpoints; i++) {
+      const t = i / numCheckpoints;
+      const point = this.trackCurve.getPointAt(t);
+      const tangent = this.trackCurve.getTangentAt(t).normalize();
+      
+      this.checkpoints.push({
+        id: i,
+        position: point,
+        tangent: tangent,
+        radius: this.trackWidth * 0.95
+      });
+    }
+  }
+
+  buildStartFinishGantry() {
+    const gantryGroup = new THREE.Group();
+    const startPoint = this.waypoints[0];
+    const tangent = this.trackCurve.getTangentAt(0).normalize();
+
+    const w = this.trackWidth + 6;
+    const h = 9;
+
+    const gantryMat = new THREE.MeshStandardMaterial({ color: 0x0f141f, metalness: 0.9, roughness: 0.2 });
+    const trussMat = new THREE.MeshStandardMaterial({ color: 0x00e5ff, metalness: 0.8, emissive: 0x00e5ff, emissiveIntensity: 0.2 });
+
+    // Left & Right Support Towers
+    const towerL = new THREE.Mesh(new THREE.BoxGeometry(1.6, h, 1.6), gantryMat);
+    towerL.position.set(-w / 2, h / 2, 0);
+
+    const towerR = new THREE.Mesh(new THREE.BoxGeometry(1.6, h, 1.6), gantryMat);
+    towerR.position.set(w / 2, h / 2, 0);
+
+    // Overhead Bridge Truss
+    const bridge = new THREE.Mesh(new THREE.BoxGeometry(w + 2, 2.2, 2.0), trussMat);
+    bridge.position.set(0, h, 0);
+
+    // Glowing Holographic "START / FINISH" Banner
+    const bannerCanvas = document.createElement('canvas');
+    bannerCanvas.width = 512;
+    bannerCanvas.height = 128;
+    const bCtx = bannerCanvas.getContext('2d');
+    bCtx.fillStyle = '#050a14';
+    bCtx.fillRect(0, 0, 512, 128);
+    bCtx.fillStyle = '#00e5ff';
+    bCtx.font = 'bold 44px Orbitron, sans-serif';
+    bCtx.textAlign = 'center';
+    bCtx.fillText('★ TURBO GRAND PRIX ★', 256, 56);
+    bCtx.fillStyle = '#ff2a5f';
+    bCtx.font = 'bold 30px Orbitron, sans-serif';
+    bCtx.fillText('START / FINISH', 256, 100);
+
+    const bannerTex = new THREE.CanvasTexture(bannerCanvas);
+    const banner = new THREE.Mesh(new THREE.PlaneGeometry(w - 2, 2.0), new THREE.MeshBasicMaterial({ map: bannerTex }));
+    banner.position.set(0, h, 1.05);
+
+    // 5 Traffic Starting Light Pods (F1 Style)
+    for (let i = 0; i < 5; i++) {
+      const offsetX = (i - 2) * 2.8;
+      const lightHousing = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.8, 0.4), gantryMat);
+      lightHousing.position.set(offsetX, h - 1.8, 0.8);
+
+      const lampRed = new THREE.Mesh(
+        new THREE.SphereGeometry(0.3, 12, 12),
+        new THREE.MeshBasicMaterial({ color: 0x330000 })
+      );
+      lampRed.position.set(offsetX, h - 1.8, 1.05);
+
+      gantryGroup.add(lightHousing, lampRed);
+      this.startTrafficLights.push(lampRed);
+    }
+
+    gantryGroup.add(towerL, towerR, bridge, banner);
+
+    const angle = Math.atan2(tangent.x, tangent.z);
+    gantryGroup.rotation.y = angle;
+    gantryGroup.position.set(startPoint.x, 0, startPoint.z);
+
+    this.scene.add(gantryGroup);
+  }
+
+  buildAnimatedChevrons() {
+    // Place flashing turn arrows at Sharp Turns (Turn 1, Hairpin, Chicane)
+    const turnIndices = [2, 4, 6, 7, 9, 11, 13];
+    const chevronTexCanvas = document.createElement('canvas');
+    chevronTexCanvas.width = 256;
+    chevronTexCanvas.height = 128;
+    const cCtx = chevronTexCanvas.getContext('2d');
+    cCtx.fillStyle = '#000000';
+    cCtx.fillRect(0, 0, 256, 128);
+    cCtx.fillStyle = '#ffea00';
+    cCtx.beginPath();
+    cCtx.moveTo(40, 20);
+    cCtx.lineTo(120, 64);
+    cCtx.lineTo(40, 108);
+    cCtx.lineTo(80, 108);
+    cCtx.lineTo(160, 64);
+    cCtx.lineTo(80, 20);
+    cCtx.closePath();
+    cCtx.fill();
+
+    cCtx.beginPath();
+    cCtx.moveTo(120, 20);
+    cCtx.lineTo(200, 64);
+    cCtx.lineTo(120, 108);
+    cCtx.lineTo(160, 108);
+    cCtx.lineTo(240, 64);
+    cCtx.lineTo(160, 20);
+    cCtx.closePath();
+    cCtx.fill();
+
+    const chevronTexture = new THREE.CanvasTexture(chevronTexCanvas);
+    const chevronMat = new THREE.MeshBasicMaterial({ map: chevronTexture, transparent: true });
+
+    turnIndices.forEach(idx => {
+      const wp = this.waypoints[idx];
+      const nextWp = this.waypoints[(idx + 1) % this.waypoints.length];
+      const tangent = new THREE.Vector3().subVectors(nextWp, wp).normalize();
+      const right = new THREE.Vector3().crossVectors(tangent, new THREE.Vector3(0, 1, 0)).normalize();
+
+      const boardPos = new THREE.Vector3().copy(wp).addScaledVector(right, (this.trackWidth / 2) + 4);
+      const board = new THREE.Mesh(new THREE.PlaneGeometry(8, 4), chevronMat.clone());
+      board.position.set(boardPos.x, 3.5, boardPos.z);
+      board.rotation.y = Math.atan2(tangent.x, tangent.z);
+      this.scene.add(board);
+      this.animatedChevrons.push(board);
+    });
+  }
+
+  buildCyberpunkCity() {
+    // 1. Vast Terrain Ground
+    const groundGeo = new THREE.PlaneGeometry(1600, 1600, 16, 16);
+    const groundMat = new THREE.MeshStandardMaterial({ color: 0x060810, roughness: 0.95 });
+    const ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -0.05;
+    ground.receiveShadow = true;
+    this.scene.add(ground);
+
+    // 2. 60+ Futuristic Cyberpunk Skyscrapers with glowing windows
+    const buildingColors = [0x0b101d, 0x111626, 0x0f172a];
+    const neonAccentColors = [0x00e5ff, 0xff2a5f, 0x8b5cf6, 0x00e676];
+
+    for (let i = 0; i < 70; i++) {
+      const angle = (i / 70) * Math.PI * 2 + (Math.random() * 0.1);
+      const distance = 220 + Math.random() * 280;
+      const bx = Math.sin(angle) * distance;
+      const bz = Math.cos(angle) * distance;
+      const bHeight = 50 + Math.random() * 140;
+      const bWidth = 25 + Math.random() * 35;
+      const bDepth = 25 + Math.random() * 35;
+
+      const buildingGroup = new THREE.Group();
+      const bMat = new THREE.MeshStandardMaterial({
+        color: buildingColors[i % buildingColors.length],
+        metalness: 0.8,
+        roughness: 0.3
+      });
+
+      const bMesh = new THREE.Mesh(new THREE.BoxGeometry(bWidth, bHeight, bDepth), bMat);
+      bMesh.position.y = bHeight / 2;
+      buildingGroup.add(bMesh);
+
+      // Rooftop Neon Spire / Antenna
+      const spireMat = new THREE.MeshBasicMaterial({ color: neonAccentColors[i % neonAccentColors.length] });
+      const spire = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 1.2, 20, 6), spireMat);
+      spire.position.set(0, bHeight + 10, 0);
+      buildingGroup.add(spire);
+
+      // Red Warning Light at Spire Peak
+      const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.8, 8, 8), new THREE.MeshBasicMaterial({ color: 0xff0033 }));
+      beacon.position.set(0, bHeight + 20, 0);
+      buildingGroup.add(beacon);
+
+      buildingGroup.position.set(bx, 0, bz);
+      this.scene.add(buildingGroup);
+    }
+  }
+
+  // Animation Tick for Track elements (Pulsing Chevrons)
+  update(time) {
+    const pulse = 0.6 + 0.4 * Math.sin(time * 6);
+    this.animatedChevrons.forEach(c => {
+      c.material.opacity = pulse;
+    });
+  }
+}

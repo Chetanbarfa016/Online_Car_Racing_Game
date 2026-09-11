@@ -1,0 +1,32 @@
+{
+  "name": "online-car-racing-game",
+  "version": "1.0.0",
+  "description": "Real-time 3D Online Multiplayer Car Racing Game",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "node server/server.js",
+    "cap:add": "npx cap add android",
+    "cap:sync": "npx cap sync",
+    "open:android": "npx cap open android",
+    "build:apk": "npx cap sync && cd android && gradlew.bat assembleDebug"
+  },
+  "keywords": [
+    "threejs",
+    "racing",
+    "game",
+    "multiplayer",
+    "socketio",
+    "webgl",
+    "android"
+  ],
+  "author": "Chetan",
+  "license": "MIT",
+  "dependencies": {
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/cli": "^6.1.2",
+    "@capacitor/core": "^6.1.2",
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "appId": "com.turboracer.racing3d",
+  "appName": "Turbo Racer 3D",
+  "webDir": "public",
+  "bundledWebRuntime": false,
+  "server": {
+    "cleartext": true
+  }
+}
