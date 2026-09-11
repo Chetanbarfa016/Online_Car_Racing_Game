@@ -26,12 +26,12 @@ class UIController {
     }
 
     // 1. Car Color Picker (12 Colors)
-    const colorDots = document.querySelectorAll('.color-dot');
-    colorDots.forEach(dot => {
-      dot.addEventListener('click', (e) => {
-        colorDots.forEach(d => d.classList.remove('active'));
-        dot.classList.add('active');
-        this.selectedColor = dot.getAttribute('data-color');
+    const colorSwatches = document.querySelectorAll('.color-swatch, .color-dot');
+    colorSwatches.forEach(swatch => {
+      swatch.addEventListener('click', (e) => {
+        colorSwatches.forEach(s => s.classList.remove('active'));
+        swatch.classList.add('active');
+        this.selectedColor = swatch.getAttribute('data-color');
         if (this.game.localCar) {
           this.game.localCar.setColor(this.selectedColor);
         }
@@ -39,41 +39,51 @@ class UIController {
     });
 
     // 1b. Car Model Selector & Dynamic Stats
-    const modelBtns = document.querySelectorAll('.model-btn');
-    modelBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        modelBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        this.selectedModel = btn.getAttribute('data-model');
+    const modelCards = document.querySelectorAll('.model-card, .model-btn');
+    modelCards.forEach(card => {
+      card.addEventListener('click', () => {
+        modelCards.forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+        this.selectedModel = card.getAttribute('data-model');
         
         if (this.game.localCar) {
           this.game.localCar.setModel(this.selectedModel);
           this.game.localCar.setColor(this.selectedColor);
         }
 
-        // Update Stat Bars
+        // Update Stat Bars & Numbers
         const stats = {
-          supercar: { speed: '85%', accel: '80%', drift: '90%' },
-          muscle: { speed: '80%', accel: '92%', drift: '96%' },
-          formula1: { speed: '98%', accel: '96%', drift: '78%' },
-          cybertruck: { speed: '75%', accel: '78%', drift: '95%' }
+          supercar: { speed: '85%', accel: '80%', drift: '90%', speedVal: '248 KM/H', accelVal: '0-100 in 2.8s', driftVal: '9.4 / 10' },
+          muscle: { speed: '80%', accel: '92%', drift: '96%', speedVal: '235 KM/H', accelVal: '0-100 in 2.5s', driftVal: '9.8 / 10' },
+          formula1: { speed: '98%', accel: '96%', drift: '78%', speedVal: '260 KM/H', accelVal: '0-100 in 1.9s', driftVal: '8.2 / 10' },
+          cybertruck: { speed: '75%', accel: '78%', drift: '95%', speedVal: '230 KM/H', accelVal: '0-100 in 3.1s', driftVal: '9.6 / 10' }
         }[this.selectedModel];
 
         if (stats) {
-          document.getElementById('stat-speed').style.width = stats.speed;
-          document.getElementById('stat-accel').style.width = stats.accel;
-          document.getElementById('stat-drift').style.width = stats.drift;
+          const sSpeed = document.getElementById('stat-speed');
+          const sAccel = document.getElementById('stat-accel');
+          const sDrift = document.getElementById('stat-drift');
+          if (sSpeed) sSpeed.style.width = stats.speed;
+          if (sAccel) sAccel.style.width = stats.accel;
+          if (sDrift) sDrift.style.width = stats.drift;
+
+          const vSpeed = document.getElementById('stat-val-speed');
+          const vAccel = document.getElementById('stat-val-accel');
+          const vDrift = document.getElementById('stat-val-drift');
+          if (vSpeed) vSpeed.innerText = stats.speedVal;
+          if (vAccel) vAccel.innerText = stats.accelVal;
+          if (vDrift) vDrift.innerText = stats.driftVal;
         }
       });
     });
 
     // 1c. Track / Map Selector
-    const trackCards = document.querySelectorAll('.track-card');
-    trackCards.forEach(card => {
-      card.addEventListener('click', () => {
-        trackCards.forEach(c => c.classList.remove('active'));
-        card.classList.add('active');
-        this.selectedTrack = card.getAttribute('data-track');
+    const trackRows = document.querySelectorAll('.track-row, .track-card');
+    trackRows.forEach(row => {
+      row.addEventListener('click', () => {
+        trackRows.forEach(r => r.classList.remove('active'));
+        row.classList.add('active');
+        this.selectedTrack = row.getAttribute('data-track');
         
         // Live update track in 3D scene
         if (this.game.track) {
@@ -83,7 +93,24 @@ class UIController {
             this.game.localCar.mesh.position.copy(this.game.localCar.position);
           }
         }
-        this.showToast(`🗺️ Loaded Map: ${card.querySelector('.track-name').innerText}`);
+        const titleEl = row.querySelector('.t-title, .track-name');
+        const title = titleEl ? titleEl.innerText : this.selectedTrack;
+        this.showToast(`🗺️ Loaded Map: ${title}`);
+      });
+    });
+
+    // 1d. Time of Day Selector (Day, Sunset, Night)
+    const timeChips = document.querySelectorAll('.time-chip');
+    timeChips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        timeChips.forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        const timeMode = chip.getAttribute('data-time') || 'night';
+        if (this.game) {
+          this.game.setTimeOfDay(timeMode);
+        }
+        const timeName = chip.querySelector('.time-name') ? chip.querySelector('.time-name').innerText : timeMode;
+        this.showToast(`✨ Lighting: ${timeName} Mode Activated`);
       });
     });
 

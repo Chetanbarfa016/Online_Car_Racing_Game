@@ -95,25 +95,84 @@ class Game {
   }
 
   initLighting() {
-    const ambientLight = new THREE.AmbientLight(0xdbeafe, 0.65);
-    this.scene.add(ambientLight);
+    this.ambientLight = new THREE.AmbientLight(0xdbeafe, 0.65);
+    this.scene.add(this.ambientLight);
 
-    const mainCyanLight = new THREE.DirectionalLight(0x00e5ff, 1.4);
-    mainCyanLight.position.set(120, 180, 80);
-    mainCyanLight.castShadow = true;
-    mainCyanLight.shadow.mapSize.width = 2048;
-    mainCyanLight.shadow.mapSize.height = 2048;
-    this.scene.add(mainCyanLight);
+    this.mainSunLight = new THREE.DirectionalLight(0x00e5ff, 1.4);
+    this.mainSunLight.position.set(120, 180, 80);
+    this.mainSunLight.castShadow = true;
+    this.mainSunLight.shadow.mapSize.width = 2048;
+    this.mainSunLight.shadow.mapSize.height = 2048;
+    this.scene.add(this.mainSunLight);
 
-    const magentaFillLight = new THREE.DirectionalLight(0xff2a5f, 1.0);
-    magentaFillLight.position.set(-120, 90, -120);
-    this.scene.add(magentaFillLight);
+    this.fillLight = new THREE.DirectionalLight(0xff2a5f, 1.0);
+    this.fillLight.position.set(-120, 90, -120);
+    this.scene.add(this.fillLight);
 
     // Showroom Overhead Dramatic Spotlight
     this.showroomSpotlight = new THREE.SpotLight(0xffffff, 2.5, 30, Math.PI / 4, 0.3, 1.2);
     this.showroomSpotlight.position.set(0, 10, 0);
     this.showroomSpotlight.castShadow = true;
     this.scene.add(this.showroomSpotlight);
+  }
+
+  setTimeOfDay(timeMode = 'night') {
+    this.timeOfDay = timeMode;
+    if (timeMode === 'day') {
+      // Crisp Bright Sunlight
+      this.scene.background = new THREE.Color(0x60a5fa);
+      this.scene.fog = new THREE.FogExp2(0x93c5fd, 0.0022);
+      if (this.ambientLight) {
+        this.ambientLight.color.setHex(0xffffff);
+        this.ambientLight.intensity = 0.9;
+      }
+      if (this.mainSunLight) {
+        this.mainSunLight.color.setHex(0xfffbeb);
+        this.mainSunLight.intensity = 1.8;
+        this.mainSunLight.position.set(150, 220, 100);
+      }
+      if (this.fillLight) {
+        this.fillLight.color.setHex(0xbae6fd);
+        this.fillLight.intensity = 0.6;
+        this.fillLight.position.set(-100, 80, -100);
+      }
+    } else if (timeMode === 'sunset') {
+      // Golden Hour / Sunset Amber Glow
+      this.scene.background = new THREE.Color(0x451a03);
+      this.scene.fog = new THREE.FogExp2(0x78350f, 0.0028);
+      if (this.ambientLight) {
+        this.ambientLight.color.setHex(0xfef08a);
+        this.ambientLight.intensity = 0.75;
+      }
+      if (this.mainSunLight) {
+        this.mainSunLight.color.setHex(0xf97316);
+        this.mainSunLight.intensity = 1.7;
+        this.mainSunLight.position.set(200, 70, 120);
+      }
+      if (this.fillLight) {
+        this.fillLight.color.setHex(0xec4899);
+        this.fillLight.intensity = 0.85;
+        this.fillLight.position.set(-120, 40, -120);
+      }
+    } else {
+      // Cyber Neon Night
+      this.scene.background = new THREE.Color(0x060812);
+      this.scene.fog = new THREE.FogExp2(0x060812, 0.0032);
+      if (this.ambientLight) {
+        this.ambientLight.color.setHex(0xdbeafe);
+        this.ambientLight.intensity = 0.65;
+      }
+      if (this.mainSunLight) {
+        this.mainSunLight.color.setHex(0x00e5ff);
+        this.mainSunLight.intensity = 1.4;
+        this.mainSunLight.position.set(120, 180, 80);
+      }
+      if (this.fillLight) {
+        this.fillLight.color.setHex(0xff2a5f);
+        this.fillLight.intensity = 1.0;
+        this.fillLight.position.set(-120, 90, -120);
+      }
+    }
   }
 
   createShowroomTurntable() {

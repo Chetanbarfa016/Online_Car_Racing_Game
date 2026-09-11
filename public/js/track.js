@@ -1,4 +1,4 @@
-// Multi-Map 3D Racing Track Generator (Neon City, Desert Canyon, Tokyo Drift Circuit)
+// Multi-Map 3D Racing Track Generator (Neon City, Metropolis, Jungle Safari, Desert Canyon, Tokyo Drift)
 class RacingTrack {
   constructor(scene, trackId = 'neon_city') {
     this.scene = scene;
@@ -16,12 +16,45 @@ class RacingTrack {
 
   init(trackId = 'neon_city') {
     this.trackId = trackId;
-
-    // Clear previous track objects from scene
     this.clearTrack();
 
     // Map Specific Waypoint Circuits
-    if (this.trackId === 'desert_canyon') {
+    if (this.trackId === 'jungle_safari') {
+      // Lush Winding Forest Circuit
+      this.waypoints = [
+        new THREE.Vector3(0, 0, 0),
+        new THREE.Vector3(0, 0, 150),
+        new THREE.Vector3(60, 0, 220),
+        new THREE.Vector3(140, 0, 190),
+        new THREE.Vector3(190, 0, 90),
+        new THREE.Vector3(160, 0, -10),
+        new THREE.Vector3(100, 0, -90),
+        new THREE.Vector3(30, 0, -150),
+        new THREE.Vector3(-50, 0, -140),
+        new THREE.Vector3(-120, 0, -70),
+        new THREE.Vector3(-160, 0, 30),
+        new THREE.Vector3(-130, 0, 130),
+        new THREE.Vector3(-40, 0, 150),
+        new THREE.Vector3(0, 0, 0)
+      ];
+    } else if (this.trackId === 'city_center') {
+      // Metropolis Downtown Grid
+      this.waypoints = [
+        new THREE.Vector3(0, 0, 0),
+        new THREE.Vector3(0, 0, 180),
+        new THREE.Vector3(80, 0, 180),
+        new THREE.Vector3(180, 0, 180),
+        new THREE.Vector3(180, 0, 0),
+        new THREE.Vector3(180, 0, -140),
+        new THREE.Vector3(90, 0, -140),
+        new THREE.Vector3(0, 0, -140),
+        new THREE.Vector3(-120, 0, -140),
+        new THREE.Vector3(-150, 0, -40),
+        new THREE.Vector3(-150, 0, 90),
+        new THREE.Vector3(-60, 0, 120),
+        new THREE.Vector3(0, 0, 0)
+      ];
+    } else if (this.trackId === 'desert_canyon') {
       this.waypoints = [
         new THREE.Vector3(0, 0, 0),
         new THREE.Vector3(0, 0, 160),
@@ -153,13 +186,42 @@ class RacingTrack {
     roadGeometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
     roadGeometry.setIndex(indices);
 
-    // Map Specific Road Textures
     const canvas = document.createElement('canvas');
     canvas.width = 1024;
     canvas.height = 1024;
     const ctx = canvas.getContext('2d');
 
-    if (this.trackId === 'desert_canyon') {
+    if (this.trackId === 'jungle_safari') {
+      // Rainforest Mud & Asphalt mix
+      ctx.fillStyle = '#1e241c';
+      ctx.fillRect(0, 0, 1024, 1024);
+      for (let j = 0; j < 6000; j++) {
+        ctx.fillStyle = Math.random() > 0.5 ? '#2d3829' : '#151a14';
+        ctx.fillRect(Math.random() * 1024, Math.random() * 1024, 2, 2);
+      }
+      ctx.fillStyle = '#00e676';
+      ctx.fillRect(20, 0, 16, 1024);
+      ctx.fillRect(988, 0, 16, 1024);
+      ctx.fillStyle = '#ffea00';
+      for (let y = 0; y < 1024; y += 128) {
+        ctx.fillRect(504, y, 16, 72);
+      }
+    } else if (this.trackId === 'city_center') {
+      // Modern Clean City Asphalt
+      ctx.fillStyle = '#181b22';
+      ctx.fillRect(0, 0, 1024, 1024);
+      for (let j = 0; j < 6000; j++) {
+        ctx.fillStyle = Math.random() > 0.5 ? '#242933' : '#111317';
+        ctx.fillRect(Math.random() * 1024, Math.random() * 1024, 2, 2);
+      }
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(20, 0, 16, 1024);
+      ctx.fillRect(988, 0, 16, 1024);
+      ctx.fillStyle = '#ffea00';
+      for (let y = 0; y < 1024; y += 128) {
+        ctx.fillRect(504, y, 16, 72);
+      }
+    } else if (this.trackId === 'desert_canyon') {
       ctx.fillStyle = '#261f18';
       ctx.fillRect(0, 0, 1024, 1024);
       for (let j = 0; j < 6000; j++) {
@@ -213,7 +275,7 @@ class RacingTrack {
   }
 
   buildCurbsAndGuardrails(points) {
-    const railColor = this.trackId === 'desert_canyon' ? 0xff9800 : this.trackId === 'tokyo_circuit' ? 0xff0055 : 0x00e5ff;
+    const railColor = this.trackId === 'jungle_safari' ? 0x00e676 : this.trackId === 'city_center' ? 0x00b4d8 : this.trackId === 'desert_canyon' ? 0xff9800 : this.trackId === 'tokyo_circuit' ? 0xff0055 : 0x00e5ff;
     const railMat = new THREE.MeshStandardMaterial({
       color: railColor,
       emissive: railColor,
@@ -335,9 +397,8 @@ class RacingTrack {
     const cCtx = chevronTexCanvas.getContext('2d');
     cCtx.fillStyle = '#000000';
     cCtx.fillRect(0, 0, 256, 128);
-    cCtx.fillStyle = this.trackId === 'desert_canyon' ? '#ff9800' : '#ffea00';
+    cCtx.fillStyle = this.trackId === 'desert_canyon' ? '#ff9800' : this.trackId === 'jungle_safari' ? '#00e676' : '#ffea00';
     
-    // Draw Chevrons
     cCtx.beginPath();
     cCtx.moveTo(40, 20); cCtx.lineTo(120, 64); cCtx.lineTo(40, 108); cCtx.lineTo(80, 108); cCtx.lineTo(160, 64); cCtx.lineTo(80, 20); cCtx.closePath(); cCtx.fill();
     cCtx.beginPath();
@@ -365,7 +426,12 @@ class RacingTrack {
   }
 
   buildEnvironment() {
-    const groundColor = this.trackId === 'desert_canyon' ? 0x2e1a0d : this.trackId === 'tokyo_circuit' ? 0x070c18 : 0x060810;
+    let groundColor = 0x060810;
+    if (this.trackId === 'jungle_safari') groundColor = 0x142811;
+    else if (this.trackId === 'city_center') groundColor = 0x0c0f17;
+    else if (this.trackId === 'desert_canyon') groundColor = 0x2e1a0d;
+    else if (this.trackId === 'tokyo_circuit') groundColor = 0x070c18;
+
     const groundGeo = new THREE.PlaneGeometry(1600, 1600, 16, 16);
     const groundMat = new THREE.MeshStandardMaterial({ color: groundColor, roughness: 0.95 });
     const ground = new THREE.Mesh(groundGeo, groundMat);
@@ -375,8 +441,35 @@ class RacingTrack {
     this.scene.add(ground);
     this.environmentMeshes.push(ground);
 
-    if (this.trackId === 'desert_canyon') {
-      // Rocky Canyon Formations
+    if (this.trackId === 'jungle_safari') {
+      // 3D Tropical Rainforest Trees & Rocks
+      const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4a2e18, roughness: 0.9 });
+      const foliageMat = new THREE.MeshStandardMaterial({ color: 0x1b5e20, roughness: 0.7 });
+      const foliageMatLight = new THREE.MeshStandardMaterial({ color: 0x2e7d32, roughness: 0.7 });
+
+      for (let i = 0; i < 90; i++) {
+        const treeGroup = new THREE.Group();
+        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 1.2, 10, 8), trunkMat);
+        trunk.position.y = 5;
+
+        // Tree Canopy
+        const canopy1 = new THREE.Mesh(new THREE.ConeGeometry(5, 7, 8), foliageMat);
+        canopy1.position.y = 10;
+        const canopy2 = new THREE.Mesh(new THREE.ConeGeometry(3.8, 5.5, 8), foliageMatLight);
+        canopy2.position.y = 13.5;
+
+        treeGroup.add(trunk, canopy1, canopy2);
+
+        const angle = (i / 90) * Math.PI * 2 + (Math.random() * 0.1);
+        const dist = 160 + Math.random() * 260;
+        treeGroup.position.set(Math.sin(angle) * dist, 0, Math.cos(angle) * dist);
+        const scale = 0.8 + Math.random() * 0.8;
+        treeGroup.scale.set(scale, scale, scale);
+
+        this.scene.add(treeGroup);
+        this.environmentMeshes.push(treeGroup);
+      }
+    } else if (this.trackId === 'desert_canyon') {
       const rockMat = new THREE.MeshStandardMaterial({ color: 0x7c3f1d, roughness: 0.9, metalness: 0.1 });
       for (let i = 0; i < 40; i++) {
         const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(15 + Math.random() * 25, 1), rockMat);
@@ -388,19 +481,21 @@ class RacingTrack {
         this.environmentMeshes.push(rock);
       }
     } else {
-      // Cyberpunk Skyscrapers
-      const buildingColors = [0x0b101d, 0x111626, 0x0f172a];
-      const neonAccentColors = [0x00e5ff, 0xff2a5f, 0x8b5cf6, 0x00e676];
+      // Modern Downtown & Cyber City Skyscrapers
+      const buildingColors = this.trackId === 'city_center' 
+        ? [0x1e293b, 0x334155, 0x475569, 0x0f172a] 
+        : [0x0b101d, 0x111626, 0x0f172a];
+      const neonAccentColors = [0x00e5ff, 0xff2a5f, 0x8b5cf6, 0x00e676, 0xffea00];
 
       for (let i = 0; i < 70; i++) {
         const angle = (i / 70) * Math.PI * 2;
-        const distance = 220 + Math.random() * 280;
+        const distance = 200 + Math.random() * 280;
         const bx = Math.sin(angle) * distance;
         const bz = Math.cos(angle) * distance;
-        const bHeight = 50 + Math.random() * 140;
+        const bHeight = 45 + Math.random() * 150;
 
         const buildingGroup = new THREE.Group();
-        const bMat = new THREE.MeshStandardMaterial({ color: buildingColors[i % buildingColors.length], metalness: 0.8, roughness: 0.3 });
+        const bMat = new THREE.MeshStandardMaterial({ color: buildingColors[i % buildingColors.length], metalness: 0.8, roughness: 0.25 });
         const bMesh = new THREE.Mesh(new THREE.BoxGeometry(25 + Math.random() * 30, bHeight, 25 + Math.random() * 30), bMat);
         bMesh.position.y = bHeight / 2;
         buildingGroup.add(bMesh);

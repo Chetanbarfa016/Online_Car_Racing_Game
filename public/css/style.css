@@ -334,6 +334,49 @@ body, html {
   font-family: 'Rajdhani', sans-serif;
 }
 
+/* Time of Day Selector Grid */
+.time-chips-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.time-chip {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 8px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Rajdhani', sans-serif;
+  color: #fff;
+}
+
+.time-chip:hover {
+  border-color: rgba(255, 234, 0, 0.6);
+  transform: translateY(-2px);
+}
+
+.time-chip.active {
+  background: linear-gradient(135deg, rgba(255, 234, 0, 0.2), rgba(255, 145, 0, 0.3));
+  border-color: #ffea00;
+  box-shadow: 0 0 12px rgba(255, 234, 0, 0.4);
+}
+
+.time-icon {
+  font-size: 1.2rem;
+}
+
+.time-name {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
 /* =================================================================
    RIGHT PANEL: TELEMETRY & MATCHMAKING
    ================================================================= */
