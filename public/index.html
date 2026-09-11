@@ -262,7 +262,19 @@
         <span class="hud-label">TIME</span>
         <span id="hud-timer-text" class="hud-value">00:00.0</span>
       </div>
+      <div class="hud-card hud-lifeline">
+        <span class="hud-label">ARMOR / LIFELINE</span>
+        <div id="hud-lifelines" class="lifelines-hearts">
+          <span class="heart-icon active">❤️</span>
+          <span class="heart-icon active">❤️</span>
+          <span class="heart-icon active">❤️</span>
+          <span class="heart-icon active">❤️</span>
+        </div>
+      </div>
     </div>
+
+    <!-- Damage Screen Glitch / Flash -->
+    <div id="damage-vignette" class="damage-flash-overlay"></div>
 
     <!-- Leaderboard Widget (Top Right) -->
     <div class="hud-leaderboard glass-card" id="hud-leaderboard">
@@ -331,6 +343,49 @@
     <div id="countdown-number" class="countdown-text">3</div>
   </div>
 
+  <!-- WRECKED / ELIMINATED OVERLAY -->
+  <div id="wrecked-overlay" class="overlay" style="display: none;">
+    <div class="wrecked-box glass-card">
+      <div class="wreck-icon">💥</div>
+      <h1 class="wreck-title">CAR WRECKED!</h1>
+      <p class="wreck-subtitle">Fatal collision damage sustained! Lifelines exhausted (4/4 Hits).</p>
+      <div class="wreck-actions">
+        <button id="btn-respawn-repair" class="btn btn-hero btn-pulse">🔧 REPAIR & RESPAWN</button>
+        <button id="btn-wreck-garage" class="btn btn-secondary">BACK TO SHOWROOM</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- INTERSTITIAL AD OVERLAY (Playgama & Google Ads) -->
+  <div id="ad-overlay" class="overlay-center" style="display: none;">
+    <div class="ad-card glass-card">
+      <div class="ad-badge-row">
+        <span class="ad-tag">SPONSORED ADVERTISEMENT</span>
+        <span id="ad-countdown" class="ad-timer">Ad closes in 3s</span>
+      </div>
+      <div class="ad-media-container" id="ad-media-slot">
+        <!-- Google AdSense / H5 Ads Slot -->
+        <ins class="adsbygoogle"
+             style="display:block; width:100%; height:180px;"
+             data-ad-client="ca-pub-0000000000000000"
+             data-ad-slot="1234567890"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+        <!-- Dynamic Racing Sponsor Showcase -->
+        <div class="ad-sponsor-banner">
+          <div class="ad-sponsor-glow"></div>
+          <div class="ad-sponsor-content">
+            <span class="ad-brand-icon">⚡</span>
+            <h3>TURBO NITRO ENERGY</h3>
+            <p>Unleash Maximum Horsepower on Every Track!</p>
+            <button class="btn btn-pill btn-ad-cta">Install Now</button>
+          </div>
+        </div>
+      </div>
+      <button id="btn-skip-ad" class="btn btn-pill btn-skip" style="display: none;">SKIP AD ⏭️</button>
+    </div>
+  </div>
+
   <!-- PODIUM & WINNER OVERLAY -->
   <div id="podium-overlay" class="overlay" style="display: none;">
     <div class="podium-box glass-card">
@@ -348,6 +403,7 @@
   <!-- GAME ENGINE SCRIPTS -->
   <script src="./js/track.js"></script>
   <script src="./js/car.js"></script>
+  <script src="./js/ai.js"></script>
   <script src="./js/controls.js"></script>
   <script src="./js/network.js"></script>
   <script src="./js/ui.js"></script>

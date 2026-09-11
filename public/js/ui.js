@@ -1,4 +1,4 @@
-// User Interface, HUD, Speedometer, Minimap Radar & Podium Handler
+﻿// User Interface, HUD, Speedometer, Lifeline Hearts, Damage VFX & Ad Coordinator
 class UIController {
   constructor(game) {
     this.game = game;
@@ -28,7 +28,7 @@ class UIController {
     // 1. Car Color Picker (12 Colors)
     const colorSwatches = document.querySelectorAll('.color-swatch, .color-dot');
     colorSwatches.forEach(swatch => {
-      swatch.addEventListener('click', (e) => {
+      swatch.addEventListener('click', () => {
         colorSwatches.forEach(s => s.classList.remove('active'));
         swatch.classList.add('active');
         this.selectedColor = swatch.getAttribute('data-color');
@@ -51,12 +51,11 @@ class UIController {
           this.game.localCar.setColor(this.selectedColor);
         }
 
-        // Update Stat Bars & Numbers
         const stats = {
-          supercar: { speed: '85%', accel: '80%', drift: '90%', speedVal: '248 KM/H', accelVal: '0-100 in 2.8s', driftVal: '9.4 / 10' },
-          muscle: { speed: '80%', accel: '92%', drift: '96%', speedVal: '235 KM/H', accelVal: '0-100 in 2.5s', driftVal: '9.8 / 10' },
-          formula1: { speed: '98%', accel: '96%', drift: '78%', speedVal: '260 KM/H', accelVal: '0-100 in 1.9s', driftVal: '8.2 / 10' },
-          cybertruck: { speed: '75%', accel: '78%', drift: '95%', speedVal: '230 KM/H', accelVal: '0-100 in 3.1s', driftVal: '9.6 / 10' }
+          supercar: { speed: '85%', accel: '80%', drift: '90%', speedVal: '250 KM/H', accelVal: '0-100 in 2.8s', driftVal: '9.4 / 10' },
+          muscle: { speed: '80%', accel: '92%', drift: '96%', speedVal: '238 KM/H', accelVal: '0-100 in 2.5s', driftVal: '9.8 / 10' },
+          formula1: { speed: '98%', accel: '96%', drift: '78%', speedVal: '262 KM/H', accelVal: '0-100 in 1.9s', driftVal: '8.2 / 10' },
+          cybertruck: { speed: '75%', accel: '78%', drift: '95%', speedVal: '232 KM/H', accelVal: '0-100 in 3.1s', driftVal: '9.6 / 10' }
         }[this.selectedModel];
 
         if (stats) {
@@ -85,7 +84,6 @@ class UIController {
         row.classList.add('active');
         this.selectedTrack = row.getAttribute('data-track');
         
-        // Live update track in 3D scene
         if (this.game.track) {
           this.game.track.init(this.selectedTrack);
           if (this.game.localCar) {
@@ -95,7 +93,7 @@ class UIController {
         }
         const titleEl = row.querySelector('.t-title, .track-name');
         const title = titleEl ? titleEl.innerText : this.selectedTrack;
-        this.showToast(`🗺️ Loaded Map: ${title}`);
+        this.showToast(🗺️ Loaded Map: );
       });
     });
 
@@ -110,7 +108,7 @@ class UIController {
           this.game.setTimeOfDay(timeMode);
         }
         const timeName = chip.querySelector('.time-name') ? chip.querySelector('.time-name').innerText : timeMode;
-        this.showToast(`✨ Lighting: ${timeName} Mode Activated`);
+        this.showToast(✨ Lighting:  Mode Activated);
       });
     });
 
@@ -154,10 +152,10 @@ class UIController {
         
         let targetUrl = ipInput;
         if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
-          targetUrl = `http://${targetUrl}:3000`;
+          targetUrl = http://:3000;
         }
 
-        this.showToast(`Connecting to Hotspot Host at ${targetUrl}...`);
+        this.showToast(Connecting to Hotspot Host at ...);
         this.game.network.connectToServer(targetUrl);
         setTimeout(() => {
           this.game.network.quickMatch(name, this.selectedColor, this.selectedModel);
@@ -182,17 +180,22 @@ class UIController {
       this.game.network.joinRoom(code, name, this.selectedColor, this.selectedModel);
     });
 
-    // 7. Quick Match Button
+    // 7. Quick Match Button (Single Player vs AI Bots or Quick Match)
     document.getElementById('btn-quick-match').addEventListener('click', () => {
       const name = document.getElementById('player-name-input').value.trim() || 'Racer';
-      this.game.network.quickMatch(name, this.selectedColor, this.selectedModel);
+      // If server is connected, quick match online, or launch Single Player AI race!
+      if (this.game.network && this.game.network.isConnected) {
+        this.game.network.quickMatch(name, this.selectedColor, this.selectedModel);
+      } else {
+        this.game.startSinglePlayerGame();
+      }
     });
 
     // 8. Copy Room Code Button
     document.getElementById('btn-copy-code').addEventListener('click', () => {
       const code = document.getElementById('display-room-code').innerText;
       navigator.clipboard.writeText(code);
-      this.showToast(`📋 Room Code ${code} copied to clipboard!`);
+      this.showToast(📋 Room Code  copied to clipboard!);
     });
 
     // 9. Start Race Button (Host only)
@@ -200,25 +203,145 @@ class UIController {
       this.game.network.startRace();
     });
 
-    // 7. Leave Room Button
+    // 10. Leave Room Button
     document.getElementById('btn-leave-room').addEventListener('click', () => {
       window.location.reload();
     });
 
-    // 8. Back to Lobby from Podium
+    // 11. Back to Lobby from Podium
     document.getElementById('btn-back-lobby').addEventListener('click', () => {
       window.location.reload();
     });
 
-    // 9. Camera Switch Button
+    // 12. Camera Switch Button
     document.getElementById('btn-cam-switch').addEventListener('click', () => {
       this.game.toggleCameraView();
     });
 
-    // 10. Reset Car Button
+    // 13. Reset Car Button
     document.getElementById('btn-car-reset').addEventListener('click', () => {
       this.game.resetLocalCar();
     });
+
+    // 14. Wrecked Modal Buttons (Respawn & Showroom)
+    const btnRespawn = document.getElementById('btn-respawn-repair');
+    if (btnRespawn) {
+      btnRespawn.addEventListener('click', () => {
+        document.getElementById('wrecked-overlay').style.display = 'none';
+        if (this.game.localCar) {
+          this.game.localCar.repair();
+          this.game.resetLocalCar();
+          this.updateLifelines(this.game.localCar.lives, this.game.localCar.maxLives);
+          this.showToast('🔧 Car Repaired! Back in the Race!');
+        }
+      });
+    }
+
+    const btnWreckGarage = document.getElementById('btn-wreck-garage');
+    if (btnWreckGarage) {
+      btnWreckGarage.addEventListener('click', () => {
+        window.location.reload();
+      });
+    }
+  }
+
+  // Update Lifeline / Armor Hearts (❤️❤️❤️❤️)
+  updateLifelines(lives, maxLives = 4) {
+    const container = document.getElementById('hud-lifelines');
+    if (!container) return;
+
+    const hearts = container.querySelectorAll('.heart-icon');
+    hearts.forEach((h, idx) => {
+      if (idx < lives) {
+        h.classList.remove('lost');
+        h.classList.add('active');
+      } else {
+        h.classList.remove('active');
+        h.classList.add('lost');
+      }
+    });
+  }
+
+  // Screen Damage Glitch Flash Effect
+  flashDamageEffect() {
+    const vignette = document.getElementById('damage-vignette');
+    if (vignette) {
+      vignette.classList.add('active');
+      setTimeout(() => {
+        vignette.classList.remove('active');
+      }, 250);
+    }
+  }
+
+  showWreckedOverlay() {
+    const overlay = document.getElementById('wrecked-overlay');
+    if (overlay) {
+      overlay.style.display = 'flex';
+    }
+  }
+
+  // Interstitial Ad Management (Playgama Bridge + Google Ads / Sponsor Simulation)
+  showAdOverlay(callback) {
+    // 1. Check Playgama Bridge Official Ad first
+    if (window.bridge && bridge.advertisement && bridge.advertisement.showInterstitial) {
+      bridge.advertisement.showInterstitial()
+        .then(() => {
+          if (callback) callback();
+        })
+        .catch(() => {
+          this.showCustomAdModal(callback);
+        });
+      return;
+    }
+
+    // 2. Otherwise Show Custom High-Converting Sponsor / Google Ad Modal
+    this.showCustomAdModal(callback);
+  }
+
+  showCustomAdModal(callback) {
+    const adOverlay = document.getElementById('ad-overlay');
+    const timerEl = document.getElementById('ad-countdown');
+    const skipBtn = document.getElementById('btn-skip-ad');
+
+    if (!adOverlay) {
+      if (callback) callback();
+      return;
+    }
+
+    adOverlay.style.display = 'flex';
+    if (skipBtn) skipBtn.style.display = 'none';
+
+    // Push Google Ads if adsbygoogle is loaded
+    try {
+      if (window.adsbygoogle) {
+        (window.adsbygoogle = window.adsbygoogle || []).push({});
+      }
+    } catch (e) {}
+
+    let timeLeft = 3;
+    if (timerEl) timerEl.innerText = Ad closes in s;
+
+    const interval = setInterval(() => {
+      timeLeft--;
+      if (timeLeft <= 0) {
+        clearInterval(interval);
+        if (skipBtn) skipBtn.style.display = 'inline-block';
+        if (timerEl) timerEl.innerText = 'Reward / Continue Ready';
+
+        const finishAd = () => {
+          adOverlay.style.display = 'none';
+          if (skipBtn) skipBtn.onclick = null;
+          if (callback) callback();
+        };
+
+        if (skipBtn) {
+          skipBtn.onclick = finishAd;
+        }
+        setTimeout(finishAd, 800);
+      } else {
+        if (timerEl) timerEl.innerText = Ad closes in s;
+      }
+    }, 1000);
   }
 
   showRoomLobby(roomId, roomData, isHost) {
@@ -236,13 +359,13 @@ class UIController {
     players.forEach(p => {
       const card = document.createElement('div');
       card.className = 'player-card';
-      card.innerHTML = `
-        <div class="player-color-badge" style="background:${p.color};"></div>
+      card.innerHTML = 
+        <div class="player-color-badge" style="background:;"></div>
         <div class="player-card-info">
-          <span class="player-card-name">${p.name}</span>
-          ${p.isHost ? '<span class="host-badge">HOST</span>' : ''}
+          <span class="player-card-name"></span>
+          
         </div>
-      `;
+      ;
       container.appendChild(card);
     });
 
@@ -265,24 +388,20 @@ class UIController {
   }
 
   updateHUD(car, timeElapsed, totalPlayers) {
-    // Speedometer
     const speedEl = document.getElementById('hud-speed-value');
     if (speedEl) {
       speedEl.innerText = Math.abs(Math.round(car.speed));
     }
 
-    // Gear Indicator
     const gearEl = document.getElementById('hud-gear-value');
     if (gearEl) {
       gearEl.innerText = car.speed < -1 ? 'R' : (car.currentGear || 1);
     }
 
-    // RPM Bar
     const rpmBar = document.getElementById('rpm-bar-fill');
     if (rpmBar) {
       const rpmPct = Math.min(100, Math.max(10, ((car.rpm || 1000) / 8500) * 100));
-      rpmBar.style.width = `${rpmPct}%`;
-      // High-rev redline color
+      rpmBar.style.width = ${rpmPct}%;
       if (rpmPct > 80) {
         rpmBar.style.background = 'linear-gradient(90deg, #ffea00, #ff0033)';
       } else {
@@ -290,29 +409,25 @@ class UIController {
       }
     }
 
-    // Nitro Bar
     const nitroBar = document.getElementById('nitro-bar-fill');
     if (nitroBar) {
       const pct = (car.nitroAmount / car.nitroMax) * 100;
-      nitroBar.style.width = `${pct}%`;
+      nitroBar.style.width = ${pct}%;
     }
 
-    // Lap
     const lapEl = document.getElementById('hud-lap-text');
     if (lapEl) {
-      lapEl.innerText = `${Math.min(car.currentLap, 3)}/3`;
+      lapEl.innerText = ${Math.min(car.currentLap, 3)}/3;
     }
 
-    // Timer
     const timerEl = document.getElementById('hud-timer-text');
     if (timerEl && timeElapsed >= 0) {
       const minutes = Math.floor(timeElapsed / 60);
       const seconds = Math.floor(timeElapsed % 60);
       const ms = Math.floor((timeElapsed * 10) % 10);
-      timerEl.innerText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${ms}`;
+      timerEl.innerText = ${minutes.toString().padStart(2, '0')}:.;
     }
 
-    // Render Minimap Radar
     this.renderMinimap(car);
   }
 
@@ -325,12 +440,10 @@ class UIController {
 
     ctx.clearRect(0, 0, w, h);
 
-    // Track center offset and scale
     const scale = 0.32;
     const offsetX = w / 2;
     const offsetY = h / 2 - 10;
 
-    // Draw Track Path
     ctx.strokeStyle = 'rgba(0, 229, 255, 0.4)';
     ctx.lineWidth = 4;
     ctx.beginPath();
@@ -345,7 +458,19 @@ class UIController {
     ctx.closePath();
     ctx.stroke();
 
-    // Draw Remote Players Dots
+    // AI Bots Dots (Yellow / Blue)
+    this.game.aiBots.forEach(bot => {
+      if (bot.car && bot.car.mesh) {
+        const bx = offsetX + bot.car.mesh.position.x * scale;
+        const by = offsetY + bot.car.mesh.position.z * scale;
+        ctx.fillStyle = bot.car.color || '#ffea00';
+        ctx.beginPath();
+        ctx.arc(bx, by, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    });
+
+    // Remote Players Dots
     this.game.network.remotePlayers.forEach((rcar) => {
       const rx = offsetX + rcar.mesh.position.x * scale;
       const ry = offsetY + rcar.mesh.position.z * scale;
@@ -355,7 +480,7 @@ class UIController {
       ctx.fill();
     });
 
-    // Draw Local Player Dot (White Glowing)
+    // Local Player Dot
     if (localCar) {
       const lx = offsetX + localCar.mesh.position.x * scale;
       const ly = offsetY + localCar.mesh.position.z * scale;
@@ -372,7 +497,7 @@ class UIController {
   updateRankings(rank, total) {
     const rankEl = document.getElementById('hud-rank-text');
     if (rankEl) {
-      rankEl.innerHTML = `${rank}<small>/${total}</small>`;
+      rankEl.innerHTML = ${rank}<small>/</small>;
     }
   }
 
@@ -393,20 +518,26 @@ class UIController {
     }
   }
 
-  showPodium(winners) {
+  // Enhanced Winner Podium Screen with 1st, 2nd, 3rd, 4th Positions & Lap Times
+  showPodiumScreen(allRacers) {
     const overlay = document.getElementById('podium-overlay');
     const list = document.getElementById('podium-winners-list');
     list.innerHTML = '';
 
-    winners.forEach((w, idx) => {
+    const medals = ['🥇 1ST', '🥈 2ND', '🥉 3RD', '4TH'];
+
+    allRacers.forEach((r, idx) => {
       const card = document.createElement('div');
-      card.className = `winner-card ${idx === 0 ? 'rank-1' : ''}`;
-      const medal = idx === 0 ? '🥇 1st' : idx === 1 ? '🥈 2nd' : idx === 2 ? '🥉 3rd' : `${idx + 1}th`;
-      card.innerHTML = `
-        <span class="winner-rank">${medal}</span>
-        <span class="winner-name" style="color:${w.color};">${w.name}</span>
-        <span class="winner-time">${w.time.toFixed(2)}s</span>
-      `;
+      card.className = winner-card rank-;
+      const medalText = medals[idx] || ${idx + 1}TH;
+      card.innerHTML = 
+        <span class="w-rank-badge"></span>
+        <div class="w-details">
+          <span class="w-name" style="color:;"></span>
+          <span class="w-model"> MACHINE</span>
+        </div>
+        <span class="w-time"></span>
+      ;
       list.appendChild(card);
     });
 

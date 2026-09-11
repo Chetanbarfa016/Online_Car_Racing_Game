@@ -1,4 +1,4 @@
-// High-End 3D Supercar, Multi-Model Generator, Dynamic NameTags, VFX Particle Systems & Audio Synth
+﻿// High-End Next-Gen 3D Supercar, Active Aero Spoilers, 4-Hit Lifeline System, Collision VFX & Sound Synth
 class Car {
   constructor(scene, color = '#ff2a5f', isLocalPlayer = false, carModel = 'supercar', playerName = 'Racer') {
     this.scene = scene;
@@ -38,13 +38,19 @@ class Car {
     this.isDrifting = false;
     this.isBraking = false;
 
+    // 4-Hit Crash Lifeline / Health System
+    this.maxLives = 4;
+    this.lives = 4;
+    this.isWrecked = false;
+    this.damageCooldown = 0;
+
     // Lap & Race Stats
     this.currentLap = 1;
     this.currentCheckpoint = 0;
     this.finished = false;
     this.wrongWay = false;
 
-    // 3D Mesh Hierarchy
+    // 3D Mesh Hierarchy & Animated Parts
     this.mesh = new THREE.Group();
     this.bodyGroup = new THREE.Group();
     this.wheels = [];
@@ -54,10 +60,14 @@ class Car {
     this.taillightMesh = null;
     this.headlightSpotlights = [];
     this.nameTagSprite = null;
+    this.activeSpoilerMesh = null;
 
-    // Particle Systems (Tire Smoke Pool)
+    // Particle Systems (Tire Smoke, Crash Sparks, Fire/Wreck Smoke)
     this.smokePool = [];
     this.maxSmoke = 50;
+    this.sparkPool = [];
+    this.maxSparks = 40;
+    this.wreckParticles = [];
 
     this.buildCarModel();
     this.createNameTag();
@@ -72,14 +82,14 @@ class Car {
   getModelStats(model) {
     switch (model) {
       case 'muscle': // Heavy Muscle V8
-        return { maxSpeed: 170, nitroMaxSpeed: 235, acceleration: 85, turnSpeed: 2.3, driftFactor: 0.96, name: 'V8 Thunder Muscle' };
+        return { maxSpeed: 172, nitroMaxSpeed: 238, acceleration: 86, turnSpeed: 2.35, driftFactor: 0.96, name: 'V8 Thunder Muscle' };
       case 'formula1': // Apex F1
-        return { maxSpeed: 190, nitroMaxSpeed: 260, acceleration: 92, turnSpeed: 3.1, driftFactor: 0.90, name: 'Apex F1 Speedster' };
+        return { maxSpeed: 192, nitroMaxSpeed: 262, acceleration: 94, turnSpeed: 3.15, driftFactor: 0.90, name: 'Apex F1 Speedster' };
       case 'cybertruck': // Titan CyberTruck 4x4
-        return { maxSpeed: 165, nitroMaxSpeed: 230, acceleration: 78, turnSpeed: 2.1, driftFactor: 0.97, name: 'Titan CyberTruck 4x4' };
+        return { maxSpeed: 168, nitroMaxSpeed: 232, acceleration: 80, turnSpeed: 2.15, driftFactor: 0.97, name: 'Titan CyberTruck 4x4' };
       case 'supercar':
       default: // Cyber Phantom Supercar
-        return { maxSpeed: 178, nitroMaxSpeed: 248, acceleration: 76, turnSpeed: 2.6, driftFactor: 0.94, name: 'Cyber Phantom GT' };
+        return { maxSpeed: 180, nitroMaxSpeed: 250, acceleration: 78, turnSpeed: 2.65, driftFactor: 0.94, name: 'Cyber Phantom GT' };
     }
   }
 
@@ -92,169 +102,190 @@ class Car {
     this.frontWheelHubs = [];
     this.exhaustFlames = [];
     this.underglowLights = [];
+    this.activeSpoilerMesh = null;
 
     const carRoot = this.bodyGroup;
 
-    // Common Materials
+    // High-End Materials
     const bodyMat = new THREE.MeshStandardMaterial({
       color: new THREE.Color(this.color),
-      metalness: 0.9,
-      roughness: 0.15
+      metalness: 0.92,
+      roughness: 0.12,
+      envMapIntensity: 1.5
     });
 
-    const carbonMat = new THREE.MeshStandardMaterial({ color: 0x14171d, metalness: 0.95, roughness: 0.25 });
-    const chromeMat = new THREE.MeshStandardMaterial({ color: 0xdddddd, metalness: 0.95, roughness: 0.1 });
-    const glassMat = new THREE.MeshPhysicalMaterial({ color: 0x07111e, metalness: 0.2, roughness: 0.05, transmission: 0.85, transparent: true, opacity: 0.85 });
+    const carbonMat = new THREE.MeshStandardMaterial({ color: 0x111317, metalness: 0.95, roughness: 0.2 });
+    const chromeMat = new THREE.MeshStandardMaterial({ color: 0xeeeeee, metalness: 0.98, roughness: 0.08 });
+    const glassMat = new THREE.MeshPhysicalMaterial({
+      color: 0x07111e,
+      metalness: 0.3,
+      roughness: 0.05,
+      transmission: 0.9,
+      transparent: true,
+      opacity: 0.85
+    });
     const glowHeadlightMat = new THREE.MeshBasicMaterial({ color: 0xecfeff });
     const glowTaillightMat = new THREE.MeshBasicMaterial({ color: 0xff0033 });
     const neonUnderglowMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(this.color) });
-    const brakeCaliperMat = new THREE.MeshStandardMaterial({ color: 0xff002b, metalness: 0.8, roughness: 0.3 });
-    const discBrakeMat = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.9, roughness: 0.2 });
+    const brakeCaliperMat = new THREE.MeshStandardMaterial({ color: 0x00ff88, metalness: 0.8, roughness: 0.2 });
+    const discBrakeMat = new THREE.MeshStandardMaterial({ color: 0x999999, metalness: 0.95, roughness: 0.15 });
 
-    // Distinct Mesh Variations Based on Model
     if (this.carModel === 'formula1') {
-      // ===== 1. FORMULA 1 OPEN-WHEEL RACER =====
-      // Monocoque Nosecone
-      const nose = new THREE.Mesh(new THREE.ConeGeometry(0.55, 3.2, 8), bodyMat);
+      // ===== 1. FORMULA 1 HYPER-AERODYNAMIC =====
+      const nose = new THREE.Mesh(new THREE.ConeGeometry(0.5, 3.4, 12), bodyMat);
       nose.rotation.x = Math.PI / 2;
-      nose.position.set(0, 0.45, 1.3);
-      
-      // Cockpit Pod & Halo
-      const cockpit = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.5, 2.0), carbonMat);
-      cockpit.position.set(0, 0.5, -0.6);
+      nose.position.set(0, 0.42, 1.35);
 
-      const halo = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.04, 8, 16), carbonMat);
+      const cockpit = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.48, 2.1), carbonMat);
+      cockpit.position.set(0, 0.48, -0.6);
+
+      const halo = new THREE.Mesh(new THREE.TorusGeometry(0.36, 0.045, 10, 20), carbonMat);
       halo.rotation.x = Math.PI / 2;
-      halo.position.set(0, 0.85, -0.4);
+      halo.position.set(0, 0.88, -0.4);
 
-      // Front & Rear Giant F1 Wings
-      const fWing = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.06, 0.8), carbonMat);
-      fWing.position.set(0, 0.22, 2.6);
+      // Multi-element Front Wing
+      const fWing = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.05, 0.9), carbonMat);
+      fWing.position.set(0, 0.2, 2.7);
+      const fWingPlateL = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.25, 0.9), carbonMat);
+      fWingPlateL.position.set(-1.25, 0.3, 2.7);
+      const fWingPlateR = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.25, 0.9), carbonMat);
+      fWingPlateR.position.set(1.25, 0.3, 2.7);
 
-      const rWing = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.08, 0.7), carbonMat);
-      rWing.position.set(0, 1.25, -2.1);
+      // Rear DRS Wing
+      const rWingGroup = new THREE.Group();
+      rWingGroup.position.set(0, 1.25, -2.15);
+      const rWing = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.08, 0.75), carbonMat);
+      rWingGroup.add(rWing);
+      this.activeSpoilerMesh = rWingGroup;
 
-      carRoot.add(nose, cockpit, halo, fWing, rWing);
+      carRoot.add(nose, cockpit, halo, fWing, fWingPlateL, fWingPlateR, rWingGroup);
 
-      // F1 Headlights / Taillight
       this.taillightMesh = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.1), glowTaillightMat);
-      this.taillightMesh.position.set(0, 0.5, -2.1);
+      this.taillightMesh.position.set(0, 0.5, -2.15);
       carRoot.add(this.taillightMesh);
 
     } else if (this.carModel === 'muscle') {
-      // ===== 2. V8 MUSCLE BEAST =====
-      // Aggressive Boxy Muscle Chassis
-      const chassis = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.6, 4.6), bodyMat);
-      chassis.position.y = 0.55;
-      
-      // Giant Blower / Supercharger sticking out of hood
-      const blower = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.35, 0.7), chromeMat);
-      blower.position.set(0, 0.95, 1.2);
-      
-      const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.5, 2.0), glassMat);
-      cabin.position.set(0, 1.05, -0.3);
+      // ===== 2. V8 THUNDER MUSCLE =====
+      const chassis = new THREE.Mesh(new THREE.BoxGeometry(2.25, 0.62, 4.65), bodyMat);
+      chassis.position.y = 0.56;
 
-      // Dual Racing Stripes (Black/Carbon)
-      const stripeL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.02, 4.6), carbonMat);
-      stripeL.position.set(-0.25, 0.86, 0);
-      const stripeR = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.02, 4.6), carbonMat);
-      stripeR.position.set(0.25, 0.86, 0);
+      const blower = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.38, 0.75), chromeMat);
+      blower.position.set(0, 0.98, 1.25);
 
-      // Ducktail Spoiler
-      const ducktail = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.25, 0.1), carbonMat);
-      ducktail.position.set(0, 0.95, -2.3);
-      ducktail.rotation.x = -0.3;
+      const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.85, 0.52, 2.1), glassMat);
+      cabin.position.set(0, 1.08, -0.3);
+
+      const stripeL = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.02, 4.65), carbonMat);
+      stripeL.position.set(-0.28, 0.88, 0);
+      const stripeR = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.02, 4.65), carbonMat);
+      stripeR.position.set(0.28, 0.88, 0);
+
+      const ducktail = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.28, 0.12), carbonMat);
+      ducktail.position.set(0, 0.98, -2.35);
+      ducktail.rotation.x = -0.32;
+      this.activeSpoilerMesh = ducktail;
 
       carRoot.add(chassis, blower, cabin, stripeL, stripeR, ducktail);
 
-      // Headlights & Taillights
-      const hlL = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 12), glowHeadlightMat);
-      hlL.position.set(-0.8, 0.58, 2.31);
-      const hlR = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 12), glowHeadlightMat);
-      hlR.position.set(0.8, 0.58, 2.31);
+      // Projector Dual Headlights
+      [-0.82, 0.82].forEach(hx => {
+        const hl = new THREE.Mesh(new THREE.SphereGeometry(0.19, 14, 14), glowHeadlightMat);
+        hl.position.set(hx, 0.6, 2.34);
+        carRoot.add(hl);
+      });
 
-      this.taillightMesh = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.15, 0.1), glowTaillightMat);
-      this.taillightMesh.position.set(0, 0.65, -2.31);
-
-      carRoot.add(hlL, hlR, this.taillightMesh);
+      this.taillightMesh = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.16, 0.1), glowTaillightMat);
+      this.taillightMesh.position.set(0, 0.66, -2.34);
+      carRoot.add(this.taillightMesh);
 
     } else if (this.carModel === 'cybertruck') {
       // ===== 3. TITAN CYBERTRUCK 4x4 =====
-      // Angular Polygonal Cyber Body
-      const lower = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.7, 4.8), bodyMat);
-      lower.position.y = 0.65;
+      const lower = new THREE.Mesh(new THREE.BoxGeometry(2.35, 0.72, 4.85), bodyMat);
+      lower.position.y = 0.68;
 
-      const roofApex = new THREE.Mesh(new THREE.ConeGeometry(1.4, 0.9, 4), bodyMat);
+      const roofApex = new THREE.Mesh(new THREE.ConeGeometry(1.45, 0.95, 4), bodyMat);
       roofApex.rotation.y = Math.PI / 4;
-      roofApex.position.set(0, 1.45, -0.1);
+      roofApex.position.set(0, 1.48, -0.1);
 
-      const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.55, 2.6), glassMat);
-      cabin.position.set(0, 1.15, -0.1);
+      const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.95, 0.58, 2.7), glassMat);
+      cabin.position.set(0, 1.18, -0.1);
 
-      // Front Full Lightbar
-      const hlBar = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.08, 0.1), glowHeadlightMat);
-      hlBar.position.set(0, 0.9, 2.41);
+      const hlBar = new THREE.Mesh(new THREE.BoxGeometry(2.25, 0.09, 0.1), glowHeadlightMat);
+      hlBar.position.set(0, 0.92, 2.44);
 
-      this.taillightMesh = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.08, 0.1), glowTaillightMat);
-      this.taillightMesh.position.set(0, 0.9, -2.41);
+      this.taillightMesh = new THREE.Mesh(new THREE.BoxGeometry(2.25, 0.09, 0.1), glowTaillightMat);
+      this.taillightMesh.position.set(0, 0.92, -2.44);
 
       carRoot.add(lower, roofApex, cabin, hlBar, this.taillightMesh);
 
     } else {
-      // ===== 4. CYBER PHANTOM GT SUPERCAR (Default) =====
-      const chassis = new THREE.Mesh(new THREE.BoxGeometry(2.15, 0.42, 4.5), bodyMat);
-      chassis.position.y = 0.46;
+      // ===== 4. CYBER PHANTOM GT SUPERCAR (Ultra Modern) =====
+      const chassis = new THREE.Mesh(new THREE.BoxGeometry(2.18, 0.44, 4.55), bodyMat);
+      chassis.position.y = 0.48;
 
-      const splitter = new THREE.Mesh(new THREE.BoxGeometry(2.25, 0.08, 0.7), carbonMat);
-      splitter.position.set(0, 0.26, 2.3);
+      const splitter = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.08, 0.75), carbonMat);
+      splitter.position.set(0, 0.26, 2.32);
 
-      const hood = new THREE.Mesh(new THREE.BoxGeometry(1.95, 0.2, 1.5), bodyMat);
-      hood.position.set(0, 0.62, 1.4);
-      hood.rotation.x = -0.14;
+      const hood = new THREE.Mesh(new THREE.BoxGeometry(1.98, 0.22, 1.55), bodyMat);
+      hood.position.set(0, 0.64, 1.42);
+      hood.rotation.x = -0.15;
 
-      const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.65, 0.46, 2.3), glassMat);
-      cabin.position.set(0, 0.96, -0.2);
+      const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.68, 0.48, 2.35), glassMat);
+      cabin.position.set(0, 0.98, -0.2);
 
-      const wingBlade = new THREE.Mesh(new THREE.BoxGeometry(2.35, 0.08, 0.55), carbonMat);
-      wingBlade.position.set(0, 1.32, -2.15);
-      wingBlade.rotation.x = 0.08;
+      // Side Air Intakes
+      [-1.02, 1.02].forEach(ix => {
+        const scoop = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.35, 1.2), carbonMat);
+        scoop.position.set(ix, 0.52, -0.4);
+        carRoot.add(scoop);
+      });
 
-      const wingStalkL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.6, 0.15), carbonMat);
-      wingStalkL.position.set(-0.7, 1.02, -2.1);
-      const wingStalkR = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.6, 0.15), carbonMat);
-      wingStalkR.position.set(0.7, 1.02, -2.1);
+      // Active Dynamic Aero Wing
+      const spoilerGroup = new THREE.Group();
+      spoilerGroup.position.set(0, 1.08, -2.18);
+      const wingBlade = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.08, 0.6), carbonMat);
+      wingBlade.position.y = 0.28;
+      const wingStalkL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.55, 0.15), carbonMat);
+      wingStalkL.position.set(-0.7, 0, 0);
+      const wingStalkR = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.55, 0.15), carbonMat);
+      wingStalkR.position.set(0.7, 0, 0);
+      spoilerGroup.add(wingBlade, wingStalkL, wingStalkR);
+      carRoot.add(spoilerGroup);
+      this.activeSpoilerMesh = spoilerGroup;
 
-      const hlL = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.12, 0.15), glowHeadlightMat);
-      hlL.position.set(-0.78, 0.58, 2.26);
-      const hlR = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.12, 0.15), glowHeadlightMat);
-      hlR.position.set(0.78, 0.58, 2.26);
+      // LED Matrix Headlights
+      [-0.8, 0.8].forEach(hx => {
+        const hl = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.12, 0.15), glowHeadlightMat);
+        hl.position.set(hx, 0.6, 2.29);
+        carRoot.add(hl);
+      });
 
-      this.taillightMesh = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.09, 0.12), glowTaillightMat);
-      this.taillightMesh.position.set(0, 0.68, -2.28);
+      this.taillightMesh = new THREE.Mesh(new THREE.BoxGeometry(2.05, 0.09, 0.12), glowTaillightMat);
+      this.taillightMesh.position.set(0, 0.7, -2.3);
 
-      carRoot.add(chassis, splitter, hood, cabin, wingBlade, wingStalkL, wingStalkR, hlL, hlR, this.taillightMesh);
+      carRoot.add(chassis, splitter, hood, cabin, this.taillightMesh);
     }
 
     // Exhaust Pipes & Multi-layer Nitro Flames
     [-0.45, 0.45].forEach((offsetX) => {
       const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.35, 12), chromeMat);
       pipe.rotation.x = Math.PI / 2;
-      pipe.position.set(offsetX, 0.36, -2.3);
+      pipe.position.set(offsetX, 0.36, -2.32);
       carRoot.add(pipe);
 
       const outerFlame = new THREE.Mesh(
-        new THREE.ConeGeometry(0.25, 1.2, 10),
+        new THREE.ConeGeometry(0.26, 1.3, 10),
         new THREE.MeshBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.0, blending: THREE.AdditiveBlending })
       );
       outerFlame.rotation.x = -Math.PI / 2;
-      outerFlame.position.set(offsetX, 0.36, -2.9);
+      outerFlame.position.set(offsetX, 0.36, -2.95);
 
       const innerCore = new THREE.Mesh(
-        new THREE.ConeGeometry(0.14, 0.8, 8),
+        new THREE.ConeGeometry(0.15, 0.85, 8),
         new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.0, blending: THREE.AdditiveBlending })
       );
       innerCore.rotation.x = -Math.PI / 2;
-      innerCore.position.set(offsetX, 0.36, -2.7);
+      innerCore.position.set(offsetX, 0.36, -2.75);
 
       carRoot.add(outerFlame, innerCore);
       this.exhaustFlames.push({ outer: outerFlame, inner: innerCore });
@@ -267,17 +298,17 @@ class Car {
     carRoot.add(underglow);
     this.underglowLights.push(underglow);
 
-    // 4 Wheels with Rims & Disc Brakes
+    // 4 Wheels with Alloy Rims, Calipers & Discs
     const wheelPositions = [
-      { x: -1.1, y: 0.38, z: 1.35, isFront: true },
-      { x: 1.1, y: 0.38, z: 1.35, isFront: true },
-      { x: -1.1, y: 0.42, z: -1.35, isFront: false },
-      { x: 1.1, y: 0.42, z: -1.35, isFront: false }
+      { x: -1.12, y: 0.38, z: 1.35, isFront: true },
+      { x: 1.12, y: 0.38, z: 1.35, isFront: true },
+      { x: -1.12, y: 0.42, z: -1.35, isFront: false },
+      { x: 1.12, y: 0.42, z: -1.35, isFront: false }
     ];
 
     const tireRadius = this.carModel === 'cybertruck' ? 0.48 : this.carModel === 'formula1' ? 0.44 : 0.4;
-    const tireGeo = new THREE.CylinderGeometry(tireRadius, tireRadius, 0.4, 20);
-    const tireMat = new THREE.MeshStandardMaterial({ color: 0x151618, roughness: 0.85 });
+    const tireGeo = new THREE.CylinderGeometry(tireRadius, tireRadius, 0.4, 22);
+    const tireMat = new THREE.MeshStandardMaterial({ color: 0x141517, roughness: 0.85 });
     const rimSpokeMat = new THREE.MeshStandardMaterial({ color: 0x222630, metalness: 0.95, roughness: 0.15 });
 
     wheelPositions.forEach((wp) => {
@@ -304,7 +335,7 @@ class Car {
       disc.rotation.z = Math.PI / 2;
       disc.position.x = wp.x > 0 ? -0.1 : 0.1;
 
-      const caliper = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.15, 0.14), brakeCaliperMat);
+      const caliper = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.16, 0.14), brakeCaliperMat);
       caliper.position.set(wp.x > 0 ? -0.1 : 0.1, 0.14, 0.12);
 
       wheelHub.add(rotatingWheel, disc, caliper);
@@ -376,7 +407,7 @@ class Car {
   setColor(hex) {
     this.color = hex;
     this.mesh.traverse((child) => {
-      if (child.isMesh && child.material && child.material.metalness === 0.9 && child.material.roughness === 0.15) {
+      if (child.isMesh && child.material && child.material.metalness >= 0.9 && child.material.roughness <= 0.2) {
         child.material.color.set(hex);
       }
     });
@@ -385,14 +416,24 @@ class Car {
   }
 
   initParticleSystems() {
+    // Tire Smoke Pool
     const smokeGeo = new THREE.SphereGeometry(0.25, 6, 6);
     const smokeMat = new THREE.MeshBasicMaterial({ color: 0x94a3b8, transparent: true, opacity: 0.4 });
-
     for (let i = 0; i < this.maxSmoke; i++) {
       const p = new THREE.Mesh(smokeGeo, smokeMat.clone());
       p.visible = false;
       this.scene.add(p);
       this.smokePool.push({ mesh: p, velocity: new THREE.Vector3(), life: 0, maxLife: 0.8, scale: 1 });
+    }
+
+    // Collision Spark Pool
+    const sparkGeo = new THREE.BoxGeometry(0.08, 0.08, 0.08);
+    const sparkMat = new THREE.MeshBasicMaterial({ color: 0xffea00 });
+    for (let i = 0; i < this.maxSparks; i++) {
+      const spk = new THREE.Mesh(sparkGeo, sparkMat.clone());
+      spk.visible = false;
+      this.scene.add(spk);
+      this.sparkPool.push({ mesh: spk, velocity: new THREE.Vector3(), life: 0, maxLife: 0.45 });
     }
   }
 
@@ -415,7 +456,77 @@ class Car {
     });
   }
 
+  emitCrashSparks(hitPos) {
+    for (let i = 0; i < 15; i++) {
+      const spk = this.sparkPool.find(p => !p.mesh.visible);
+      if (spk) {
+        spk.mesh.position.copy(hitPos || this.position);
+        spk.mesh.visible = true;
+        spk.life = 0;
+        spk.velocity.set(
+          (Math.random() - 0.5) * 14,
+          Math.random() * 8 + 3,
+          (Math.random() - 0.5) * 14
+        );
+      }
+    }
+  }
+
+  takeDamage(amount = 1, impactPosition = null) {
+    if (this.damageCooldown > 0 || this.isWrecked) return;
+    this.damageCooldown = 1.0; // 1s invulnerability
+
+    this.lives = Math.max(0, this.lives - amount);
+    this.emitCrashSparks(impactPosition || this.position);
+
+    // Play Crash Impact Sound
+    this.playCrashSound();
+
+    if (this.lives <= 0) {
+      this.isWrecked = true;
+      this.speed = 0;
+      this.velocity.set(0, 0, 0);
+      this.createWreckFire();
+    }
+  }
+
+  repair() {
+    this.lives = this.maxLives;
+    this.isWrecked = false;
+    this.damageCooldown = 0;
+    this.clearWreckFire();
+  }
+
+  createWreckFire() {
+    this.clearWreckFire();
+    // Create Fire and Smoke Emitter on engine
+    const colors = [0xff2200, 0xff7700, 0x111111, 0x333333];
+    for (let i = 0; i < 24; i++) {
+      const geo = new THREE.SphereGeometry(0.3 + Math.random() * 0.25, 6, 6);
+      const mat = new THREE.MeshBasicMaterial({
+        color: colors[i % colors.length],
+        transparent: true,
+        opacity: 0.8
+      });
+      const m = new THREE.Mesh(geo, mat);
+      m.position.copy(this.position).add(new THREE.Vector3(0, 0.6, 0.5));
+      this.scene.add(m);
+      this.wreckParticles.push({
+        mesh: m,
+        basePos: new THREE.Vector3(0, 0.6, 0.5),
+        offsetY: Math.random() * 2,
+        speed: 1.5 + Math.random() * 2
+      });
+    }
+  }
+
+  clearWreckFire() {
+    this.wreckParticles.forEach(wp => this.scene.remove(wp.mesh));
+    this.wreckParticles = [];
+  }
+
   updateParticles(delta) {
+    // Smoke
     this.smokePool.forEach(p => {
       if (p.mesh.visible) {
         p.life += delta;
@@ -429,14 +540,52 @@ class Car {
         }
       }
     });
+
+    // Sparks
+    this.sparkPool.forEach(s => {
+      if (s.mesh.visible) {
+        s.life += delta;
+        if (s.life >= s.maxLife) {
+          s.mesh.visible = false;
+        } else {
+          s.velocity.y -= 25 * delta; // Gravity
+          s.mesh.position.addScaledVector(s.velocity, delta);
+        }
+      }
+    });
+
+    // Wreck Fire/Smoke
+    if (this.isWrecked && this.wreckParticles.length > 0) {
+      this.wreckParticles.forEach(wp => {
+        wp.offsetY += wp.speed * delta;
+        if (wp.offsetY > 3.0) wp.offsetY = 0;
+        wp.mesh.position.copy(this.position).add(new THREE.Vector3(
+          (Math.random() - 0.5) * 0.4,
+          0.6 + wp.offsetY,
+          0.5 + (Math.random() - 0.5) * 0.4
+        ));
+        wp.mesh.material.opacity = Math.max(0, 1 - (wp.offsetY / 3.0));
+      });
+    }
   }
 
   update(delta, input) {
+    if (this.damageCooldown > 0) {
+      this.damageCooldown -= delta;
+    }
+
+    if (this.isWrecked) {
+      this.speed = 0;
+      this.updateParticles(delta);
+      return;
+    }
+
     if (!this.isLocalPlayer) {
       this.updateParticles(delta);
       return;
     }
 
+    // Nitro
     if (input.nitro && this.nitroAmount > 0 && input.gas) {
       this.isBoosting = true;
       this.nitroAmount = Math.max(0, this.nitroAmount - delta * 32);
@@ -514,6 +663,12 @@ class Car {
       hub.rotation.y = this.steeringAngle;
       hub.rotation.z = -this.steeringAngle * 0.12;
     });
+
+    // Active Aero Spoiler Dynamics
+    if (this.activeSpoilerMesh) {
+      const targetSpoilerTilt = this.isBraking ? -0.4 : (speedRatio > 0.7 ? 0.25 : 0.0);
+      this.activeSpoilerMesh.rotation.x = THREE.MathUtils.lerp(this.activeSpoilerMesh.rotation.x, targetSpoilerTilt, delta * 8);
+    }
 
     const targetPitch = (input.gas ? -0.04 : 0) + (this.isBraking ? 0.07 : 0);
     this.pitchAngle = THREE.MathUtils.lerp(this.pitchAngle, targetPitch, delta * 8);
@@ -604,6 +759,23 @@ class Car {
     } catch (e) {
       console.warn('AudioContext requires user interaction');
     }
+  }
+
+  playCrashSound() {
+    if (!this.audioCtx) return;
+    try {
+      const osc = this.audioCtx.createOscillator();
+      const gain = this.audioCtx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(120, this.audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(30, this.audioCtx.currentTime + 0.35);
+      gain.gain.setValueAtTime(0.3, this.audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.35);
+      osc.connect(gain);
+      gain.connect(this.audioCtx.destination);
+      osc.start();
+      osc.stop(this.audioCtx.currentTime + 0.35);
+    } catch (e) {}
   }
 
   updateAudio() {

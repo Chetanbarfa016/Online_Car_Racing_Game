@@ -1,4 +1,4 @@
-// Master 3D Game Engine, AAA Showroom Turntable, Dynamic Camera & Race Coordinator
+﻿// Master 3D Game Engine, AAA Showroom Turntable, AI Racers, Crash Lifeline & Ad Coordinator
 class Game {
   constructor() {
     this.container = document.getElementById('game-container');
@@ -11,6 +11,7 @@ class Game {
     this.controls = null;
     this.network = null;
     this.ui = null;
+    this.aiBots = []; // Array of AICarController
 
     this.clock = new THREE.Clock();
     this.cameraMode = 0; // 0: Dynamic Chase, 1: Hood Cam, 2: Orbit/Far Cam
@@ -27,6 +28,12 @@ class Game {
     this.turntableMesh = null;
     this.showroomSpotlight = null;
 
+    // Lighting References
+    this.ambientLight = null;
+    this.mainSunLight = null;
+    this.fillLight = null;
+    this.timeOfDay = 'night';
+
     // Warp Speed Streak Particles (Need for speed effect)
     this.warpParticles = null;
     this.warpCount = 150;
@@ -38,12 +45,12 @@ class Game {
   }
 
   init() {
-    // 1. Scene & Atmospheric Cyber Fog
+    // 1. Scene & Atmospheric Fog
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x060812);
     this.scene.fog = new THREE.FogExp2(0x060812, 0.0032);
 
-    // 2. Dynamic Perspective Camera
+    // 2. Perspective Camera
     this.camera = new THREE.PerspectiveCamera(
       58,
       window.innerWidth / window.innerHeight,
@@ -52,7 +59,7 @@ class Game {
     );
     this.camera.position.set(0, 15, -25);
 
-    // 3. WebGL Renderer with High-End ToneMapping & Soft Shadows
+    // 3. WebGL Renderer
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
       powerPreference: 'high-performance',
@@ -109,7 +116,6 @@ class Game {
     this.fillLight.position.set(-120, 90, -120);
     this.scene.add(this.fillLight);
 
-    // Showroom Overhead Dramatic Spotlight
     this.showroomSpotlight = new THREE.SpotLight(0xffffff, 2.5, 30, Math.PI / 4, 0.3, 1.2);
     this.showroomSpotlight.position.set(0, 10, 0);
     this.showroomSpotlight.castShadow = true;
@@ -119,7 +125,6 @@ class Game {
   setTimeOfDay(timeMode = 'night') {
     this.timeOfDay = timeMode;
     if (timeMode === 'day') {
-      // Crisp Bright Sunlight
       this.scene.background = new THREE.Color(0x60a5fa);
       this.scene.fog = new THREE.FogExp2(0x93c5fd, 0.0022);
       if (this.ambientLight) {
@@ -137,7 +142,6 @@ class Game {
         this.fillLight.position.set(-100, 80, -100);
       }
     } else if (timeMode === 'sunset') {
-      // Golden Hour / Sunset Amber Glow
       this.scene.background = new THREE.Color(0x451a03);
       this.scene.fog = new THREE.FogExp2(0x78350f, 0.0028);
       if (this.ambientLight) {
@@ -155,7 +159,6 @@ class Game {
         this.fillLight.position.set(-120, 40, -120);
       }
     } else {
-      // Cyber Neon Night
       this.scene.background = new THREE.Color(0x060812);
       this.scene.fog = new THREE.FogExp2(0x060812, 0.0032);
       if (this.ambientLight) {
@@ -177,8 +180,6 @@ class Game {
 
   createShowroomTurntable() {
     const turntableGroup = new THREE.Group();
-
-    // Metallic Brushed Platform Base
     const baseGeo = new THREE.CylinderGeometry(5.2, 5.6, 0.3, 40);
     const baseMat = new THREE.MeshStandardMaterial({
       color: 0x111624,
@@ -189,14 +190,12 @@ class Game {
     base.position.y = 0.15;
     base.receiveShadow = true;
 
-    // Glowing Neon Outer Ring
     const ringGeo = new THREE.TorusGeometry(5.25, 0.08, 12, 48);
     const ringMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff });
     const ring = new THREE.Mesh(ringGeo, ringMat);
     ring.rotation.x = Math.PI / 2;
     ring.position.y = 0.31;
 
-    // Inner Glowing Accent Ring
     const innerRingGeo = new THREE.TorusGeometry(3.5, 0.04, 12, 48);
     const innerRingMat = new THREE.MeshBasicMaterial({ color: 0xff2a5f });
     const innerRing = new THREE.Mesh(innerRingGeo, innerRingMat);
@@ -222,7 +221,6 @@ class Game {
 
       this.showroomAngle -= deltaX * 0.008;
       this.showroomElevation = Math.max(1.2, Math.min(5.0, this.showroomElevation + deltaY * 0.01));
-
       this.previousMousePosition = { x: clientX, y: clientY };
     };
 
@@ -252,7 +250,6 @@ class Game {
   initWarpSpeedParticles() {
     const geometry = new THREE.BufferGeometry();
     const positions = [];
-
     for (let i = 0; i < this.warpCount; i++) {
       positions.push(
         (Math.random() - 0.5) * 35,
@@ -260,7 +257,6 @@ class Game {
         Math.random() * 60 - 30
       );
     }
-
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     const material = new THREE.PointsMaterial({
       color: 0x00f0ff,
@@ -269,7 +265,6 @@ class Game {
       opacity: 0.0,
       blending: THREE.AdditiveBlending
     });
-
     this.warpParticles = new THREE.Points(geometry, material);
     this.scene.add(this.warpParticles);
   }
@@ -306,10 +301,72 @@ class Game {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
   }
 
+  // Pre-Race & Post-Race Ad Hook (Playgama Bridge + Google Ads / Sponsor Simulation)
+  showInterstitialAd(callback) {
+    if (this.ui) {
+      this.ui.showAdOverlay(() => {
+        if (callback) callback();
+      });
+    } else {
+      if (callback) callback();
+    }
+  }
+
+  // Start Single Player Quick Match vs AI Bots
+  startSinglePlayerGame() {
+    this.showInterstitialAd(() => {
+      this.clearAIBots();
+      this.localCar.repair();
+      this.localCar.position.set(-3.5, 0.46, -10);
+      this.localCar.rotation.set(0, 0, 0);
+      this.localCar.speed = 0;
+      this.localCar.currentLap = 1;
+      this.localCar.currentCheckpoint = 0;
+      this.localCar.finished = false;
+      this.localCar.mesh.position.copy(this.localCar.position);
+      this.localCar.mesh.rotation.set(0, 0, 0);
+
+      this.spawnAIBots();
+
+      const mockRoomData = {
+        trackId: this.ui.selectedTrack || 'neon_city',
+        players: [{ id: 'local', name: this.localCar.playerName, color: this.localCar.color, carModel: this.localCar.carModel }]
+      };
+
+      this.startCountdown(3, mockRoomData);
+    });
+  }
+
+  spawnAIBots() {
+    this.clearAIBots();
+    const botConfigs = [
+      { name: 'Apex Bot', model: 'formula1', color: '#ec4899', x: 3.5, z: -10, baseSpeed: 180, maxSpeed: 235 },
+      { name: 'Thunder Bot', model: 'muscle', color: '#ffea00', x: -3.5, z: -25, baseSpeed: 165, maxSpeed: 220 },
+      { name: 'Titan Bot', model: 'cybertruck', color: '#2979ff', x: 3.5, z: -25, baseSpeed: 160, maxSpeed: 215 }
+    ];
+
+    botConfigs.forEach(cfg => {
+      const car = new Car(this.scene, cfg.color, false, cfg.model, cfg.name);
+      car.position.set(cfg.x, 0.46, cfg.z);
+      car.mesh.position.copy(car.position);
+      const botController = new AICarController(this, car, cfg);
+      this.aiBots.push(botController);
+    });
+  }
+
+  clearAIBots() {
+    this.aiBots.forEach(b => {
+      if (b.car && b.car.mesh) {
+        this.scene.remove(b.car.mesh);
+      }
+    });
+    this.aiBots = [];
+  }
+
   startCountdown(seconds, roomData) {
     this.gameState = 'COUNTDOWN';
     this.ui.showGameHUD();
-    this.setupRoomCars(roomData);
+    this.ui.updateLifelines(this.localCar.lives, this.localCar.maxLives);
 
     if (this.turntableMesh) this.turntableMesh.visible = false;
     if (this.showroomSpotlight) this.showroomSpotlight.visible = false;
@@ -327,6 +384,7 @@ class Game {
       if (count <= 0) {
         clearInterval(interval);
         this.ui.showCountdown(0);
+        this.startRace();
         if (lights.length > 0) {
           lights.forEach(l => l.material.color.setHex(0x00e676));
         }
@@ -345,6 +403,7 @@ class Game {
       this.track.init(roomData.trackId);
     }
 
+    this.clearAIBots();
     this.network.remotePlayers.forEach(c => this.scene.remove(c.mesh));
     this.network.remotePlayers.clear();
 
@@ -352,6 +411,7 @@ class Game {
 
     roomData.players.forEach(p => {
       if (p.id === localSocketId) {
+        this.localCar.repair();
         this.localCar.setModel(p.carModel || 'supercar');
         this.localCar.setColor(p.color);
         this.localCar.setPlayerName(p.name || 'Racer');
@@ -391,6 +451,37 @@ class Game {
     this.localCar.resetToTrack(cp.position, cp.tangent);
   }
 
+  // Crash Barrier Collision & Lifeline Check
+  checkTrackCollision(delta) {
+    if (!this.localCar || this.localCar.isWrecked || this.gameState !== 'RACING') return;
+
+    const carPos = this.localCar.position;
+    const curCp = this.track.checkpoints[this.localCar.currentCheckpoint];
+    if (!curCp) return;
+
+    // Distance from track centerline
+    const distToCenter = carPos.distanceTo(curCp.position);
+    const halfWidth = (this.track.trackWidth || 24) / 2;
+
+    // If car hits barrier at high speed (> 35 km/h)
+    if (distToCenter > halfWidth + 1.2 && Math.abs(this.localCar.speed) > 35) {
+      if (this.localCar.damageCooldown <= 0) {
+        this.localCar.takeDamage(1, carPos);
+        this.ui.updateLifelines(this.localCar.lives, this.localCar.maxLives);
+        this.ui.flashDamageEffect();
+        this.ui.showToast(💥 CRASH! Lifeline: /);
+
+        // Bounce back into track
+        this.localCar.speed = -this.localCar.speed * 0.35;
+
+        // Check for Elimination
+        if (this.localCar.lives <= 0) {
+          this.ui.showWreckedOverlay();
+        }
+      }
+    }
+  }
+
   checkLapProgress() {
     if (!this.localCar || this.gameState !== 'RACING' || this.localCar.finished) return;
 
@@ -405,18 +496,67 @@ class Game {
 
       if (nextCpIdx === 0) {
         this.localCar.currentLap++;
-        this.ui.showToast(`🏁 LAP ${this.localCar.currentLap - 1} COMPLETED!`);
+        this.ui.showToast(🏁 LAP  COMPLETED!);
 
         if (this.localCar.currentLap > 3) {
           this.localCar.finished = true;
           const totalTime = (performance.now() - this.raceStartTime) / 1000;
           this.network.sendRaceFinished(totalTime);
           this.spawnFireworks();
+
+          // Trigger Post-Race Interstitial Ad before showing Podium
+          setTimeout(() => {
+            this.showInterstitialAd(() => {
+              this.showPodiumResults();
+            });
+          }, 1200);
         }
       }
 
       this.network.sendCheckpointPassed(this.localCar.currentCheckpoint, this.localCar.currentLap);
     }
+  }
+
+  showPodiumResults() {
+    const allRacers = [
+      {
+        name: this.localCar.playerName,
+        lap: this.localCar.currentLap,
+        cp: this.localCar.currentCheckpoint,
+        color: this.localCar.color,
+        model: this.localCar.carModel,
+        time: ((performance.now() - this.raceStartTime) / 1000).toFixed(2) + 's'
+      }
+    ];
+
+    this.aiBots.forEach(bot => {
+      allRacers.push({
+        name: bot.name,
+        lap: bot.car.currentLap,
+        cp: bot.car.currentCheckpoint,
+        color: bot.car.color,
+        model: bot.car.carModel,
+        time: ((performance.now() - this.raceStartTime) / 1000 + Math.random() * 2).toFixed(2) + 's'
+      });
+    });
+
+    this.network.remotePlayers.forEach((rcar, id) => {
+      allRacers.push({
+        name: rcar.playerName || 'Racer',
+        lap: rcar.currentLap || 1,
+        cp: rcar.currentCheckpoint || 0,
+        color: rcar.color,
+        model: rcar.carModel,
+        time: 'Finished'
+      });
+    });
+
+    allRacers.sort((a, b) => {
+      if (b.lap !== a.lap) return b.lap - a.lap;
+      return b.cp - a.cp;
+    });
+
+    this.ui.showPodiumScreen(allRacers);
   }
 
   spawnFireworks() {
@@ -490,6 +630,15 @@ class Game {
       }
     ];
 
+    this.aiBots.forEach((bot, idx) => {
+      allRacers.push({
+        id: i_,
+        lap: bot.car.currentLap || 1,
+        cp: bot.car.currentCheckpoint || 0,
+        pos: bot.car.position
+      });
+    });
+
     this.network.remotePlayers.forEach((rcar, id) => {
       allRacers.push({
         id: id,
@@ -521,9 +670,9 @@ class Game {
 
     let shakeX = 0;
     let shakeY = 0;
-    if (this.localCar.isBoosting || this.localCar.isDrifting) {
-      shakeX = (Math.random() - 0.5) * 0.15;
-      shakeY = (Math.random() - 0.5) * 0.15;
+    if (this.localCar.isBoosting || this.localCar.isDrifting || this.localCar.damageCooldown > 0.5) {
+      shakeX = (Math.random() - 0.5) * 0.25;
+      shakeY = (Math.random() - 0.5) * 0.25;
     }
 
     if (this.cameraMode === 0) {
@@ -578,7 +727,7 @@ class Game {
     // 1. AAA Showroom Camera & Turntable Orbit (Lobby State)
     if (this.gameState === 'LOBBY') {
       if (!this.isDragging) {
-        this.showroomAngle += delta * 0.3; // Auto gentle orbit
+        this.showroomAngle += delta * 0.3;
       }
 
       const orbitDist = 8.5;
@@ -602,14 +751,20 @@ class Game {
       const input = this.gameState === 'RACING' ? this.controls.getState() : { gas: false, brake: false, left: false, right: false, nitro: false, drift: false };
       
       this.localCar.update(delta, input);
+      this.checkTrackCollision(delta);
       this.checkLapProgress();
       this.updateCamera(delta);
       this.updateWarpParticles(delta);
       this.updateFireworks(delta);
       this.updateRankings();
 
+      // Update AI Opponents
+      if (this.gameState === 'RACING') {
+        this.aiBots.forEach(bot => bot.update(delta));
+      }
+
       const timeElapsed = (now - this.raceStartTime) / 1000;
-      this.ui.updateHUD(this.localCar, timeElapsed, this.network.remotePlayers.size + 1);
+      this.ui.updateHUD(this.localCar, timeElapsed, this.network.remotePlayers.size + this.aiBots.length + 1);
 
       if (now - this.lastNetworkSync > 33) {
         this.lastNetworkSync = now;
