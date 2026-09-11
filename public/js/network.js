@@ -6,7 +6,12 @@ class NetworkClient {
     this.isConnected = false;
     this.currentRoom = null;
     this.remotePlayers = new Map(); // socketId -> Car
-    this.serverUrl = window.location.origin;
+    
+    let defaultUrl = window.location.origin;
+    if (!defaultUrl || defaultUrl.startsWith('file:') || defaultUrl.includes('playgama') || defaultUrl.includes('yandex') || defaultUrl.includes('crazygames') || defaultUrl.includes('github.io')) {
+      defaultUrl = 'https://online-car-racing-game.onrender.com';
+    }
+    this.serverUrl = defaultUrl;
 
     this.connectToServer(this.serverUrl);
   }
