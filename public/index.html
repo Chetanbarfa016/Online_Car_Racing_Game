@@ -6,7 +6,7 @@
   <title>TURBO RACER 3D | Online Multiplayer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css" />
   <!-- Three.js Library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -16,180 +16,206 @@
   <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
-  <!-- 3D Canvas Container -->
+  <!-- 3D WebGL Canvas Container -->
   <div id="game-container"></div>
 
-  <!-- MAIN MENU & LOBBY OVERLAY -->
+  <!-- AAA GARAGE / SHOWROOM MAIN MENU OVERLAY -->
   <div id="menu-overlay" class="overlay active">
-    <div class="menu-box glass-panel">
-      <div class="title-header">
-        <h1 class="glow-text">TURBO RACER <span class="accent-text">3D</span></h1>
-        <p class="subtitle">Online Multiplayer Championship</p>
+    <!-- Top Navigation Header -->
+    <header class="garage-header">
+      <div class="logo-wrap">
+        <span class="logo-badge">PRO</span>
+        <h1 class="logo-title">TURBO<span class="accent-pink">RACER</span> <span class="logo-sub">3D</span></h1>
+      </div>
+      <div class="profile-chip glass-pill">
+        <span class="avatar-icon">🏎️</span>
+        <input type="text" id="player-name-input" maxlength="12" value="Racer_1" title="Click to edit name" />
+      </div>
+    </header>
+
+    <!-- Center Interactive Showroom Hint -->
+    <div class="showroom-3d-hint">
+      <span class="hint-icon">🔄</span> Drag to inspect car in 360°
+    </div>
+
+    <!-- Left Side Panel: Car Models, Colors, Tracks -->
+    <aside class="side-panel left-panel glass-card">
+      <div class="panel-section-title">
+        <span class="sec-number">01</span> GARAGE & CUSTOMIZE
       </div>
 
-      <!-- Step 1: Profile & Customization -->
-      <div id="lobby-profile-section" class="section-card">
-        <div class="form-group">
-          <label for="player-name-input">👤 Racer Name</label>
-          <input type="text" id="player-name-input" maxlength="12" value="Racer_1" placeholder="Enter your name..." />
-        </div>
-
-        <!-- Car Model Selector -->
-        <div class="car-model-selector-wrap">
-          <label>🏎️ Select Car Model</label>
-          <div class="model-buttons" id="model-buttons">
-            <button class="model-btn active" data-model="supercar">
-              <span class="m-icon">🏎️</span>
-              <span class="m-title">Phantom GT</span>
-            </button>
-            <button class="model-btn" data-model="muscle">
-              <span class="m-icon">🚗</span>
-              <span class="m-title">V8 Muscle</span>
-            </button>
-            <button class="model-btn" data-model="formula1">
-              <span class="m-icon">🏎️</span>
-              <span class="m-title">Apex F1</span>
-            </button>
-            <button class="model-btn" data-model="cybertruck">
-              <span class="m-icon">🚙</span>
-              <span class="m-title">Titan 4x4</span>
-            </button>
-          </div>
-          
-          <!-- Car Stats Indicator -->
-          <div class="car-stats-panel" id="car-stats-panel">
-            <div class="stat-row">
-              <span>SPEED</span>
-              <div class="stat-bar"><div id="stat-speed" style="width: 85%;"></div></div>
-            </div>
-            <div class="stat-row">
-              <span>ACCEL</span>
-              <div class="stat-bar"><div id="stat-accel" style="width: 80%;"></div></div>
-            </div>
-            <div class="stat-row">
-              <span>DRIFT</span>
-              <div class="stat-bar"><div id="stat-drift" style="width: 90%;"></div></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Color Palette (12 Colors) -->
-        <div class="customizer-row">
-          <div class="color-picker-wrap">
-            <label>🎨 Paint Color Collection</label>
-            <div class="color-options" id="color-options">
-              <span class="color-dot active" data-color="#ff2a5f" style="background:#ff2a5f;" title="Neon Red"></span>
-              <span class="color-dot" data-color="#00e5ff" style="background:#00e5ff;" title="Cyan"></span>
-              <span class="color-dot" data-color="#ffea00" style="background:#ffea00;" title="Yellow"></span>
-              <span class="color-dot" data-color="#00e676" style="background:#00e676;" title="Lime Green"></span>
-              <span class="color-dot" data-color="#b388ff" style="background:#b388ff;" title="Purple"></span>
-              <span class="color-dot" data-color="#ff9100" style="background:#ff9100;" title="Orange"></span>
-              <span class="color-dot" data-color="#ffffff" style="background:#ffffff;" title="White"></span>
-              <span class="color-dot" data-color="#2979ff" style="background:#2979ff;" title="Royal Blue"></span>
-              <span class="color-dot" data-color="#ffd700" style="background:#ffd700;" title="Gold"></span>
-              <span class="color-dot" data-color="#1e293b" style="background:#1e293b;" title="Matte Black"></span>
-              <span class="color-dot" data-color="#ec4899" style="background:#ec4899;" title="Hot Pink"></span>
-              <span class="color-dot" data-color="#14b8a6" style="background:#14b8a6;" title="Teal"></span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Map / Track Selector -->
-        <div class="track-selector-wrap">
-          <label>🗺️ Select Racing Track / Map</label>
-          <div class="track-options" id="track-options">
-            <div class="track-card active" data-track="neon_city">
-              <span class="track-badge">🌃 MAP 1</span>
-              <span class="track-name">Neon Cyber City</span>
-              <small>Night Circuit • High Speed</small>
-            </div>
-            <div class="track-card" data-track="desert_canyon">
-              <span class="track-badge">🏜️ MAP 2</span>
-              <span class="track-name">Desert Canyon</span>
-              <small>Sunset Highway • Winding</small>
-            </div>
-            <div class="track-card" data-track="tokyo_circuit">
-              <span class="track-badge">🌉 MAP 3</span>
-              <span class="track-name">Tokyo Drift Bay</span>
-              <small>Coastal Bridge • Technical</small>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Step 2: Connection Mode Selector (Hotspot vs Online) -->
-      <div class="network-mode-selector">
-        <button id="mode-hotspot-btn" class="mode-tab active">
-          📶 HOTSPOT / OFFLINE WI-FI
-        </button>
-        <button id="mode-online-btn" class="mode-tab">
-          🌐 ONLINE SERVER
-        </button>
-      </div>
-
-      <!-- Hotspot Mode Controls -->
-      <div id="hotspot-mode-section" class="section-card mode-panel active">
-        <p class="mode-hint">💡 <b>Zero Internet Needed:</b> 1 Phone turns on Hotspot, friends connect to that Wi-Fi!</p>
-        <div class="hotspot-actions">
-          <button id="btn-hotspot-host" class="btn btn-primary">
-            📡 HOST HOTSPOT GAME
+      <!-- Car Model Switcher -->
+      <div class="custom-block">
+        <label class="block-label">SELECT MACHINE</label>
+        <div class="model-cards-grid" id="model-buttons">
+          <button class="model-card active" data-model="supercar">
+            <span class="m-badge">SUPER</span>
+            <span class="m-name">Phantom GT</span>
+            <span class="m-desc">V10 Twin Turbo</span>
           </button>
-          <div class="hotspot-join-box">
-            <input type="text" id="hotspot-ip-input" placeholder="Host IP (Default: 192.168.43.1)" value="192.168.43.1" />
-            <button id="btn-hotspot-join" class="btn btn-accent">
-              🔗 JOIN HOST
-            </button>
-          </div>
+          <button class="model-card" data-model="muscle">
+            <span class="m-badge">MUSCLE</span>
+            <span class="m-name">V8 Thunder</span>
+            <span class="m-desc">Supercharged</span>
+          </button>
+          <button class="model-card" data-model="formula1">
+            <span class="m-badge">F1</span>
+            <span class="m-name">Apex Aero</span>
+            <span class="m-desc">Aero Downforce</span>
+          </button>
+          <button class="model-card" data-model="cybertruck">
+            <span class="m-badge">4X4</span>
+            <span class="m-name">Titan Cyber</span>
+            <span class="m-desc">Armored AWD</span>
+          </button>
         </div>
       </div>
 
-      <!-- Online Mode Controls -->
-      <div id="online-mode-section" class="section-card mode-panel">
-        <div class="action-buttons">
-          <button id="btn-create-room" class="btn btn-primary">
-            <span class="icon">🏁</span> CREATE ROOM
+      <!-- Metallic / Neon Paint Palette -->
+      <div class="custom-block">
+        <label class="block-label">PAINT & FINISH</label>
+        <div class="color-swatches" id="color-options">
+          <span class="color-swatch active" data-color="#ff2a5f" style="background:#ff2a5f;" title="Neon Crimson"></span>
+          <span class="color-swatch" data-color="#00e5ff" style="background:#00e5ff;" title="Electric Cyan"></span>
+          <span class="color-swatch" data-color="#ffea00" style="background:#ffea00;" title="Cyber Yellow"></span>
+          <span class="color-swatch" data-color="#00e676" style="background:#00e676;" title="Toxic Green"></span>
+          <span class="color-swatch" data-color="#b388ff" style="background:#b388ff;" title="Ultra Violet"></span>
+          <span class="color-swatch" data-color="#ff9100" style="background:#ff9100;" title="Sunset Orange"></span>
+          <span class="color-swatch" data-color="#ffffff" style="background:#ffffff;" title="Glacier White"></span>
+          <span class="color-swatch" data-color="#2979ff" style="background:#2979ff;" title="Hyper Blue"></span>
+          <span class="color-swatch" data-color="#ffd700" style="background:#ffd700;" title="Champagne Gold"></span>
+          <span class="color-swatch" data-color="#1e293b" style="background:#1e293b;" title="Stealth Matte"></span>
+          <span class="color-swatch" data-color="#ec4899" style="background:#ec4899;" title="Hot Pink"></span>
+          <span class="color-swatch" data-color="#14b8a6" style="background:#14b8a6;" title="Teal Neon"></span>
+        </div>
+      </div>
+
+      <!-- Map Selector -->
+      <div class="custom-block">
+        <label class="block-label">CIRCUIT TRACK</label>
+        <div class="track-list" id="track-options">
+          <div class="track-row active" data-track="neon_city">
+            <span class="t-icon">🌃</span>
+            <div class="t-info">
+              <span class="t-title">Neon Cyber City</span>
+              <small>High Speed Straightways</small>
+            </div>
+          </div>
+          <div class="track-row" data-track="desert_canyon">
+            <span class="t-icon">🏜️</span>
+            <div class="t-info">
+              <span class="t-title">Desert Canyon Highway</span>
+              <small>Winding Rock Arches</small>
+            </div>
+          </div>
+          <div class="track-row" data-track="tokyo_circuit">
+            <span class="t-icon">🌉</span>
+            <div class="t-info">
+              <span class="t-title">Tokyo Drift Bay</span>
+              <small>Technical Coastal Bridges</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Right Side Panel: Specs & Play Matchmaking -->
+    <aside class="side-panel right-panel glass-card">
+      <div class="panel-section-title">
+        <span class="sec-number">02</span> PERFORMANCE & RACE
+      </div>
+
+      <!-- Live Performance Telemetry -->
+      <div class="telemetry-box">
+        <div class="stat-gauge-row">
+          <span class="stat-name">TOP SPEED</span>
+          <span id="stat-val-speed" class="stat-number">248 KM/H</span>
+          <div class="stat-meter"><div id="stat-speed" class="meter-bar" style="width: 85%;"></div></div>
+        </div>
+        <div class="stat-gauge-row">
+          <span class="stat-name">ACCELERATION</span>
+          <span id="stat-val-accel" class="stat-number">0-100 in 2.8s</span>
+          <div class="stat-meter"><div id="stat-accel" class="meter-bar" style="width: 80%;"></div></div>
+        </div>
+        <div class="stat-gauge-row">
+          <span class="stat-name">DRIFT STABILITY</span>
+          <span id="stat-val-drift" class="stat-number">9.4 / 10</span>
+          <div class="stat-meter"><div id="stat-drift" class="meter-bar" style="width: 90%;"></div></div>
+        </div>
+      </div>
+
+      <!-- Mode Selector Tabs -->
+      <div class="mode-tabs-wrapper">
+        <button id="mode-online-btn" class="pro-tab active">
+          🌐 ONLINE GLOBAL
+        </button>
+        <button id="mode-hotspot-btn" class="pro-tab">
+          📶 OFFLINE HOTSPOT
+        </button>
+      </div>
+
+      <!-- Online Play Actions -->
+      <div id="online-mode-section" class="mode-content-block active">
+        <div class="cta-actions-group">
+          <button id="btn-create-room" class="btn btn-hero btn-pulse">
+            <span class="btn-icon">🏁</span> CREATE MULTIPLAYER ROOM
           </button>
           
-          <div class="join-wrap">
+          <div class="code-join-row">
             <input type="text" id="room-code-input" placeholder="ROOM CODE" maxlength="4" />
             <button id="btn-join-room" class="btn btn-secondary">JOIN</button>
           </div>
 
           <button id="btn-quick-match" class="btn btn-accent">
-            <span class="icon">⚡</span> QUICK PLAY
+            <span class="btn-icon">⚡</span> QUICK PLAY
           </button>
         </div>
       </div>
-    </div>
+
+      <!-- Hotspot Play Actions -->
+      <div id="hotspot-mode-section" class="mode-content-block">
+        <p class="hotspot-tagline">💡 <b>0 Internet:</b> Connect friends over Phone Hotspot Wi-Fi!</p>
+        <div class="cta-actions-group">
+          <button id="btn-hotspot-host" class="btn btn-hero">
+            📡 HOST HOTSPOT ROOM
+          </button>
+          <div class="code-join-row">
+            <input type="text" id="hotspot-ip-input" placeholder="Host IP (192.168.43.1)" value="192.168.43.1" />
+            <button id="btn-hotspot-join" class="btn btn-accent">JOIN HOST</button>
+          </div>
+        </div>
+      </div>
+    </aside>
   </div>
 
-  <!-- ROOM WAITING LOBBY -->
+  <!-- ROOM WAITING LOBBY OVERLAY -->
   <div id="room-lobby-overlay" class="overlay">
-    <div class="room-box glass-panel">
+    <div class="room-box glass-card">
       <div class="room-header">
-        <h2>LOBBY CODE: <span id="display-room-code" class="neon-code">----</span></h2>
-        <button id="btn-copy-code" class="btn btn-small">📋 Copy Code</button>
+        <div class="room-title-area">
+          <h2>RACE LOBBY</h2>
+          <span class="room-code-display">CODE: <b id="display-room-code" class="neon-glow-code">----</b></span>
+        </div>
+        <button id="btn-copy-code" class="btn btn-pill">📋 Copy Room Code</button>
       </div>
 
-      <div class="players-grid" id="players-list-grid">
-        <!-- Dynamically rendered player cards -->
-      </div>
+      <div class="players-grid" id="players-list-grid"></div>
 
       <div class="room-footer">
-        <button id="btn-leave-room" class="btn btn-danger">Leave</button>
-        <button id="btn-start-race" class="btn btn-primary btn-pulse" style="display:none;">START RACE 🏁</button>
-        <div id="waiting-for-host" class="waiting-text">Waiting for host to start the race...</div>
+        <button id="btn-leave-room" class="btn btn-danger">Leave Lobby</button>
+        <button id="btn-start-race" class="btn btn-hero btn-pulse" style="display:none;">START RACE 🏁</button>
+        <div id="waiting-for-host" class="waiting-text">Waiting for host to launch the race...</div>
       </div>
     </div>
   </div>
 
   <!-- IN-GAME HUD OVERLAY -->
   <div id="game-hud" style="display: none;">
-    <!-- Top Bar: Player Name, Rank, Lap, Time -->
+    <!-- Top HUD Bar: Player Name, Rank, Lap, Time -->
     <div class="hud-top-bar">
       <div class="hud-card hud-player">
         <span class="hud-label">RACER</span>
-        <span id="hud-player-name" class="hud-value" style="font-size: 1.05rem; color:#00e5ff;">Racer_1</span>
+        <span id="hud-player-name" class="hud-value hud-name-val">Racer_1</span>
       </div>
       <div class="hud-card hud-rank">
         <span class="hud-label">POSITION</span>
@@ -206,8 +232,8 @@
     </div>
 
     <!-- Leaderboard Widget (Top Right) -->
-    <div class="hud-leaderboard glass-panel" id="hud-leaderboard">
-      <h4>RACERS</h4>
+    <div class="hud-leaderboard glass-card" id="hud-leaderboard">
+      <h4>LEADERBOARD</h4>
       <div id="leaderboard-entries"></div>
     </div>
 
@@ -218,7 +244,7 @@
 
     <!-- Bottom Speedometer, Gear, RPM & Nitro -->
     <div class="hud-bottom-right">
-      <div class="speed-cluster">
+      <div class="speed-cluster glass-card">
         <div class="gear-box">
           <span class="gear-label">GEAR</span>
           <span id="hud-gear-value" class="gear-value">1</span>
@@ -248,19 +274,17 @@
       ⚠️ WRONG WAY! TURN AROUND
     </div>
 
-    <!-- Switch Camera Button -->
+    <!-- Quick Control Buttons -->
     <button id="btn-cam-switch" class="btn-cam">🎥 CAM</button>
     <button id="btn-car-reset" class="btn-reset">🔄 RESET</button>
 
     <!-- MOBILE TOUCH CONTROLS -->
     <div id="mobile-touch-controls">
-      <!-- Left: Steering Buttons -->
       <div class="touch-group touch-steering">
         <button id="touch-left" class="touch-btn steer-btn">◀</button>
         <button id="touch-right" class="touch-btn steer-btn">▶</button>
       </div>
 
-      <!-- Right: Pedals & Nitro -->
       <div class="touch-group touch-pedals">
         <button id="touch-nitro" class="touch-btn nitro-btn">⚡ NOS</button>
         <button id="touch-brake" class="touch-btn brake-btn">BRAKE</button>
@@ -276,13 +300,11 @@
 
   <!-- PODIUM & WINNER OVERLAY -->
   <div id="podium-overlay" class="overlay" style="display: none;">
-    <div class="podium-box glass-panel">
+    <div class="podium-box glass-card">
       <h1 class="trophy-title">🏆 RACE FINISHED!</h1>
-      <div class="winner-list" id="podium-winners-list">
-        <!-- Injected list of winners -->
-      </div>
+      <div class="winner-list" id="podium-winners-list"></div>
       <div class="podium-actions">
-        <button id="btn-back-lobby" class="btn btn-primary">BACK TO LOBBY</button>
+        <button id="btn-back-lobby" class="btn btn-hero">BACK TO GARAGE</button>
       </div>
     </div>
   </div>
@@ -290,7 +312,7 @@
   <!-- TOAST NOTIFICATIONS -->
   <div id="toast" class="toast"></div>
 
-  <!-- GAME SCRIPTS -->
+  <!-- GAME ENGINE SCRIPTS -->
   <script src="js/track.js"></script>
   <script src="js/car.js"></script>
   <script src="js/controls.js"></script>

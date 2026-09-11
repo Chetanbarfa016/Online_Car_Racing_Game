@@ -1,4 +1,4 @@
-// Master 3D Game Engine, Dynamic Camera, Warp Speed FX, Fireworks & Race Coordinator
+// Master 3D Game Engine, AAA Showroom Turntable, Dynamic Camera & Race Coordinator
 class Game {
   constructor() {
     this.container = document.getElementById('game-container');
@@ -19,6 +19,14 @@ class Game {
     this.raceStartTime = 0;
     this.lastNetworkSync = 0;
 
+    // Showroom Interactive Orbit Drag State
+    this.isDragging = false;
+    this.previousMousePosition = { x: 0, y: 0 };
+    this.showroomAngle = Math.PI / 4;
+    this.showroomElevation = 2.4;
+    this.turntableMesh = null;
+    this.showroomSpotlight = null;
+
     // Warp Speed Streak Particles (Need for speed effect)
     this.warpParticles = null;
     this.warpCount = 150;
@@ -30,14 +38,14 @@ class Game {
   }
 
   init() {
-    // 1. Scene & Atmospheric Fog
+    // 1. Scene & Atmospheric Cyber Fog
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x060812);
     this.scene.fog = new THREE.FogExp2(0x060812, 0.0032);
 
     // 2. Dynamic Perspective Camera
     this.camera = new THREE.PerspectiveCamera(
-      65,
+      58,
       window.innerWidth / window.innerHeight,
       0.1,
       1200
@@ -55,11 +63,12 @@ class Game {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.2;
+    this.renderer.toneMappingExposure = 1.25;
     this.container.appendChild(this.renderer.domElement);
 
-    // 4. Lighting
+    // 4. Lighting & Showroom
     this.initLighting();
+    this.createShowroomTurntable();
 
     // 5. Track & Warp FX
     this.track = new RacingTrack(this.scene);
@@ -70,38 +79,115 @@ class Game {
     this.ui = new UIController(this);
     this.network = new NetworkClient(this);
 
-    // 7. Window Resize Listener
+    // 7. Interactive Showroom Orbit Drag Listeners
+    this.initShowroomControls();
+
+    // 8. Window Resize Listener
     window.addEventListener('resize', () => this.onWindowResize());
 
-    // 8. Spawn Initial Preview Local Car on Menu
-    this.localCar = new Car(this.scene, this.ui.selectedColor, true);
+    // 9. Spawn Initial Preview Local Car on Menu
+    this.localCar = new Car(this.scene, this.ui.selectedColor, true, this.ui.selectedModel, 'Racer_1');
     this.localCar.position.set(0, 0.46, 0);
     this.localCar.mesh.position.copy(this.localCar.position);
 
-    // 9. Start Animation Loop
+    // 10. Start Animation Loop
     this.animate();
   }
 
   initLighting() {
-    const ambientLight = new THREE.AmbientLight(0xdbeafe, 0.55);
+    const ambientLight = new THREE.AmbientLight(0xdbeafe, 0.65);
     this.scene.add(ambientLight);
 
-    const mainCyanLight = new THREE.DirectionalLight(0x00e5ff, 1.3);
+    const mainCyanLight = new THREE.DirectionalLight(0x00e5ff, 1.4);
     mainCyanLight.position.set(120, 180, 80);
     mainCyanLight.castShadow = true;
     mainCyanLight.shadow.mapSize.width = 2048;
     mainCyanLight.shadow.mapSize.height = 2048;
-    mainCyanLight.shadow.camera.near = 10;
-    mainCyanLight.shadow.camera.far = 450;
-    mainCyanLight.shadow.camera.left = -160;
-    mainCyanLight.shadow.camera.right = 160;
-    mainCyanLight.shadow.camera.top = 160;
-    mainCyanLight.shadow.camera.bottom = -160;
     this.scene.add(mainCyanLight);
 
-    const magentaFillLight = new THREE.DirectionalLight(0xff2a5f, 0.9);
+    const magentaFillLight = new THREE.DirectionalLight(0xff2a5f, 1.0);
     magentaFillLight.position.set(-120, 90, -120);
     this.scene.add(magentaFillLight);
+
+    // Showroom Overhead Dramatic Spotlight
+    this.showroomSpotlight = new THREE.SpotLight(0xffffff, 2.5, 30, Math.PI / 4, 0.3, 1.2);
+    this.showroomSpotlight.position.set(0, 10, 0);
+    this.showroomSpotlight.castShadow = true;
+    this.scene.add(this.showroomSpotlight);
+  }
+
+  createShowroomTurntable() {
+    const turntableGroup = new THREE.Group();
+
+    // Metallic Brushed Platform Base
+    const baseGeo = new THREE.CylinderGeometry(5.2, 5.6, 0.3, 40);
+    const baseMat = new THREE.MeshStandardMaterial({
+      color: 0x111624,
+      metalness: 0.95,
+      roughness: 0.15
+    });
+    const base = new THREE.Mesh(baseGeo, baseMat);
+    base.position.y = 0.15;
+    base.receiveShadow = true;
+
+    // Glowing Neon Outer Ring
+    const ringGeo = new THREE.TorusGeometry(5.25, 0.08, 12, 48);
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.x = Math.PI / 2;
+    ring.position.y = 0.31;
+
+    // Inner Glowing Accent Ring
+    const innerRingGeo = new THREE.TorusGeometry(3.5, 0.04, 12, 48);
+    const innerRingMat = new THREE.MeshBasicMaterial({ color: 0xff2a5f });
+    const innerRing = new THREE.Mesh(innerRingGeo, innerRingMat);
+    innerRing.rotation.x = Math.PI / 2;
+    innerRing.position.y = 0.31;
+
+    turntableGroup.add(base, ring, innerRing);
+    this.scene.add(turntableGroup);
+    this.turntableMesh = turntableGroup;
+  }
+
+  initShowroomControls() {
+    const handleStart = (clientX, clientY) => {
+      if (this.gameState !== 'LOBBY') return;
+      this.isDragging = true;
+      this.previousMousePosition = { x: clientX, y: clientY };
+    };
+
+    const handleMove = (clientX, clientY) => {
+      if (!this.isDragging || this.gameState !== 'LOBBY') return;
+      const deltaX = clientX - this.previousMousePosition.x;
+      const deltaY = clientY - this.previousMousePosition.y;
+
+      this.showroomAngle -= deltaX * 0.008;
+      this.showroomElevation = Math.max(1.2, Math.min(5.0, this.showroomElevation + deltaY * 0.01));
+
+      this.previousMousePosition = { x: clientX, y: clientY };
+    };
+
+    const handleEnd = () => {
+      this.isDragging = false;
+    };
+
+    window.addEventListener('mousedown', (e) => handleStart(e.clientX, e.clientY));
+    window.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
+    window.addEventListener('mouseup', handleEnd);
+
+    window.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+        handleStart(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    }, { passive: true });
+
+    window.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 1) {
+        handleMove(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    }, { passive: true });
+
+    window.addEventListener('touchend', handleEnd);
   }
 
   initWarpSpeedParticles() {
@@ -166,10 +252,12 @@ class Game {
     this.ui.showGameHUD();
     this.setupRoomCars(roomData);
 
+    if (this.turntableMesh) this.turntableMesh.visible = false;
+    if (this.showroomSpotlight) this.showroomSpotlight.visible = false;
+
     let count = seconds;
     this.ui.showCountdown(count);
 
-    // Light up starting gantry lamps
     const lights = this.track.startTrafficLights;
     if (lights.length > 0) {
       lights.forEach(l => l.material.color.setHex(0x330000));
@@ -181,11 +269,10 @@ class Game {
         clearInterval(interval);
         this.ui.showCountdown(0);
         if (lights.length > 0) {
-          lights.forEach(l => l.material.color.setHex(0x00e676)); // Turn Green!
+          lights.forEach(l => l.material.color.setHex(0x00e676));
         }
       } else {
         this.ui.showCountdown(count);
-        // Sequential Red Lights
         const lightIdx = Math.min(lights.length - 1, (seconds - count));
         if (lights[lightIdx]) {
           lights[lightIdx].material.color.setHex(0xff002b);
@@ -195,7 +282,6 @@ class Game {
   }
 
   setupRoomCars(roomData) {
-    // Load Selected Room Track
     if (roomData.trackId && this.track.trackId !== roomData.trackId) {
       this.track.init(roomData.trackId);
     }
@@ -258,12 +344,10 @@ class Game {
     if (dist < nextCp.radius) {
       this.localCar.currentCheckpoint = nextCpIdx;
 
-      // Completed a full lap
       if (nextCpIdx === 0) {
         this.localCar.currentLap++;
         this.ui.showToast(`🏁 LAP ${this.localCar.currentLap - 1} COMPLETED!`);
 
-        // Check if 3 Laps completed
         if (this.localCar.currentLap > 3) {
           this.localCar.finished = true;
           const totalTime = (performance.now() - this.raceStartTime) / 1000;
@@ -365,7 +449,6 @@ class Game {
     this.ui.updateRankings(myRank, allRacers.length);
   }
 
-  // Cinematic Dynamic Camera with Spring Physics & High-Speed FOV Zoom
   updateCamera(delta) {
     if (!this.localCar) return;
 
@@ -373,12 +456,10 @@ class Game {
     const carRot = this.localCar.rotation.y;
     const speedRatio = Math.abs(this.localCar.speed) / this.localCar.maxSpeed;
 
-    // Dynamic FOV (Speed Zoom Rush)
     const targetFOV = 62 + speedRatio * 16 + (this.localCar.isBoosting ? 6 : 0);
     this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, targetFOV, delta * 5);
     this.camera.updateProjectionMatrix();
 
-    // Camera Micro-Shake on high speed / drifting
     let shakeX = 0;
     let shakeY = 0;
     if (this.localCar.isBoosting || this.localCar.isDrifting) {
@@ -387,7 +468,6 @@ class Game {
     }
 
     if (this.cameraMode === 0) {
-      // Third-Person Dynamic Chase Camera (Spring Damped)
       const distance = 11.5 + speedRatio * 2.0;
       const height = 4.4 - speedRatio * 0.4;
       
@@ -402,7 +482,6 @@ class Game {
       const lookTarget = new THREE.Vector3(carPos.x, carPos.y + 1.2, carPos.z);
       this.camera.lookAt(lookTarget);
     } else if (this.cameraMode === 1) {
-      // Hood / Bumper Camera
       const hoodOffset = new THREE.Vector3(
         Math.sin(carRot) * 0.9 + shakeX,
         1.15 + shakeY,
@@ -417,7 +496,6 @@ class Game {
       );
       this.camera.lookAt(new THREE.Vector3().addVectors(this.camera.position, forward));
     } else {
-      // Wide Orbit Camera
       const farOffset = new THREE.Vector3(
         -Math.sin(carRot) * 22,
         10.5,
@@ -428,23 +506,36 @@ class Game {
     }
   }
 
-  // Master Game Render Loop
   animate() {
     requestAnimationFrame(() => this.animate());
 
     const delta = Math.min(this.clock.getDelta(), 0.1);
     const now = performance.now();
 
-    // Track Animation (Chevrons)
     if (this.track) {
       this.track.update(now * 0.001);
     }
 
-    // 1. Lobby 3D Showroom Camera
+    // 1. AAA Showroom Camera & Turntable Orbit (Lobby State)
     if (this.gameState === 'LOBBY') {
-      const angle = now * 0.0006;
-      this.camera.position.set(Math.sin(angle) * 12, 4.5, Math.cos(angle) * 12);
-      this.camera.lookAt(0, 0.5, 0);
+      if (!this.isDragging) {
+        this.showroomAngle += delta * 0.3; // Auto gentle orbit
+      }
+
+      const orbitDist = 8.5;
+      const camX = Math.sin(this.showroomAngle) * orbitDist;
+      const camZ = Math.cos(this.showroomAngle) * orbitDist;
+      
+      this.camera.position.set(camX, this.showroomElevation, camZ);
+      this.camera.lookAt(0, 0.65, 0);
+
+      if (this.turntableMesh) {
+        this.turntableMesh.visible = true;
+        this.turntableMesh.rotation.y += delta * 0.2;
+      }
+      if (this.showroomSpotlight) {
+        this.showroomSpotlight.visible = true;
+      }
     }
 
     // 2. In-Game State
@@ -461,7 +552,6 @@ class Game {
       const timeElapsed = (now - this.raceStartTime) / 1000;
       this.ui.updateHUD(this.localCar, timeElapsed, this.network.remotePlayers.size + 1);
 
-      // 3. Network Broadcast (30 FPS rate limit)
       if (now - this.lastNetworkSync > 33) {
         this.lastNetworkSync = now;
         this.network.sendPlayerUpdate(
