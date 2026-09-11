@@ -1,4 +1,4 @@
-﻿// User Interface, HUD, Speedometer, Lifeline Hearts, Damage VFX & Ad Coordinator
+// User Interface, HUD, Speedometer, Lifeline Hearts, Damage VFX & Ad Coordinator
 class UIController {
   constructor(game) {
     this.game = game;
@@ -93,7 +93,7 @@ class UIController {
         }
         const titleEl = row.querySelector('.t-title, .track-name');
         const title = titleEl ? titleEl.innerText : this.selectedTrack;
-        this.showToast(🗺️ Loaded Map: );
+        this.showToast('🗺️ Loaded Map: ' + title);
       });
     });
 
@@ -108,7 +108,7 @@ class UIController {
           this.game.setTimeOfDay(timeMode);
         }
         const timeName = chip.querySelector('.time-name') ? chip.querySelector('.time-name').innerText : timeMode;
-        this.showToast(✨ Lighting:  Mode Activated);
+        this.showToast('✨ Lighting: ' + timeName + ' Mode Activated');
       });
     });
 
@@ -152,10 +152,10 @@ class UIController {
         
         let targetUrl = ipInput;
         if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
-          targetUrl = http://:3000;
+          targetUrl = 'http://' + targetUrl + ':3000';
         }
 
-        this.showToast(Connecting to Hotspot Host at ...);
+        this.showToast('Connecting to Hotspot Host at ' + targetUrl + '...');
         this.game.network.connectToServer(targetUrl);
         setTimeout(() => {
           this.game.network.quickMatch(name, this.selectedColor, this.selectedModel);
@@ -195,7 +195,7 @@ class UIController {
     document.getElementById('btn-copy-code').addEventListener('click', () => {
       const code = document.getElementById('display-room-code').innerText;
       navigator.clipboard.writeText(code);
-      this.showToast(📋 Room Code  copied to clipboard!);
+      this.showToast('📋 Room Code ' + code + ' copied to clipboard!');
     });
 
     // 9. Start Race Button (Host only)
@@ -319,7 +319,7 @@ class UIController {
     } catch (e) {}
 
     let timeLeft = 3;
-    if (timerEl) timerEl.innerText = Ad closes in s;
+    if (timerEl) timerEl.innerText = 'Ad closes in ' + timeLeft + 's';
 
     const interval = setInterval(() => {
       timeLeft--;
@@ -339,7 +339,7 @@ class UIController {
         }
         setTimeout(finishAd, 800);
       } else {
-        if (timerEl) timerEl.innerText = Ad closes in s;
+        if (timerEl) timerEl.innerText = 'Ad closes in ' + timeLeft + 's';
       }
     }, 1000);
   }
@@ -359,13 +359,7 @@ class UIController {
     players.forEach(p => {
       const card = document.createElement('div');
       card.className = 'player-card';
-      card.innerHTML = 
-        <div class="player-color-badge" style="background:;"></div>
-        <div class="player-card-info">
-          <span class="player-card-name"></span>
-          
-        </div>
-      ;
+      card.innerHTML = '<div class="player-color-badge" style="background:' + p.color + ';"></div><div class="player-card-info"><span class="player-card-name">' + p.name + '</span>' + (p.isHost ? '<span class="host-badge">HOST</span>' : '') + '</div>';
       container.appendChild(card);
     });
 
@@ -401,7 +395,7 @@ class UIController {
     const rpmBar = document.getElementById('rpm-bar-fill');
     if (rpmBar) {
       const rpmPct = Math.min(100, Math.max(10, ((car.rpm || 1000) / 8500) * 100));
-      rpmBar.style.width = ${rpmPct}%;
+      rpmBar.style.width = rpmPct + '%';
       if (rpmPct > 80) {
         rpmBar.style.background = 'linear-gradient(90deg, #ffea00, #ff0033)';
       } else {
@@ -412,12 +406,12 @@ class UIController {
     const nitroBar = document.getElementById('nitro-bar-fill');
     if (nitroBar) {
       const pct = (car.nitroAmount / car.nitroMax) * 100;
-      nitroBar.style.width = ${pct}%;
+      nitroBar.style.width = pct + '%';
     }
 
     const lapEl = document.getElementById('hud-lap-text');
     if (lapEl) {
-      lapEl.innerText = ${Math.min(car.currentLap, 3)}/3;
+      lapEl.innerText = Math.min(car.currentLap, 3) + '/3';
     }
 
     const timerEl = document.getElementById('hud-timer-text');
@@ -425,7 +419,7 @@ class UIController {
       const minutes = Math.floor(timeElapsed / 60);
       const seconds = Math.floor(timeElapsed % 60);
       const ms = Math.floor((timeElapsed * 10) % 10);
-      timerEl.innerText = ${minutes.toString().padStart(2, '0')}:.;
+      timerEl.innerText = String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0') + '.' + ms;
     }
 
     this.renderMinimap(car);
@@ -497,7 +491,7 @@ class UIController {
   updateRankings(rank, total) {
     const rankEl = document.getElementById('hud-rank-text');
     if (rankEl) {
-      rankEl.innerHTML = ${rank}<small>/</small>;
+      rankEl.innerHTML = rank + '<small>/' + total + '</small>';
     }
   }
 
@@ -528,16 +522,9 @@ class UIController {
 
     allRacers.forEach((r, idx) => {
       const card = document.createElement('div');
-      card.className = winner-card rank-;
-      const medalText = medals[idx] || ${idx + 1}TH;
-      card.innerHTML = 
-        <span class="w-rank-badge"></span>
-        <div class="w-details">
-          <span class="w-name" style="color:;"></span>
-          <span class="w-model"> MACHINE</span>
-        </div>
-        <span class="w-time"></span>
-      ;
+      card.className = 'winner-card rank-' + (idx + 1);
+      const medalText = medals[idx] || (idx + 1) + 'TH';
+      card.innerHTML = '<span class="w-rank-badge">' + medalText + '</span><div class="w-details"><span class="w-name" style="color:' + (r.color || '#fff') + ';">' + r.name + '</span><span class="w-model">' + (r.model || 'supercar').toUpperCase() + ' MACHINE</span></div><span class="w-time">' + r.time + '</span>';
       list.appendChild(card);
     });
 

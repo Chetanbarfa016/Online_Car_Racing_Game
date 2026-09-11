@@ -1,4 +1,4 @@
-﻿// Master 3D Game Engine, AAA Showroom Turntable, AI Racers, Crash Lifeline & Ad Coordinator
+// Master 3D Game Engine, AAA Showroom Turntable, AI Racers, Crash Lifeline & Ad Coordinator
 class Game {
   constructor() {
     this.container = document.getElementById('game-container');
@@ -469,7 +469,7 @@ class Game {
         this.localCar.takeDamage(1, carPos);
         this.ui.updateLifelines(this.localCar.lives, this.localCar.maxLives);
         this.ui.flashDamageEffect();
-        this.ui.showToast(💥 CRASH! Lifeline: /);
+        this.ui.showToast('💥 CRASH! Lifeline: ' + this.localCar.lives + '/' + this.localCar.maxLives);
 
         // Bounce back into track
         this.localCar.speed = -this.localCar.speed * 0.35;
@@ -496,7 +496,7 @@ class Game {
 
       if (nextCpIdx === 0) {
         this.localCar.currentLap++;
-        this.ui.showToast(🏁 LAP  COMPLETED!);
+        this.ui.showToast('🏁 LAP ' + (this.localCar.currentLap - 1) + ' COMPLETED!');
 
         if (this.localCar.currentLap > 3) {
           this.localCar.finished = true;
@@ -632,7 +632,7 @@ class Game {
 
     this.aiBots.forEach((bot, idx) => {
       allRacers.push({
-        id: i_,
+        id: 'ai_' + idx,
         lap: bot.car.currentLap || 1,
         cp: bot.car.currentCheckpoint || 0,
         pos: bot.car.position
