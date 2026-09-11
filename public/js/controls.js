@@ -1,4 +1,4 @@
-// Dual Input Controller: Keyboard (PC) + Mobile On-Screen Touch Controls
+// Dual Input Controller: Keyboard (PC) + Ergonomic Mobile On-Screen Touch Controls
 class InputController {
   constructor() {
     this.state = {
@@ -10,10 +10,33 @@ class InputController {
       drift: false
     };
 
-    this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 900;
+    this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || ('ontouchstart' in window) || window.innerWidth < 900;
 
     this.initKeyboard();
     this.initTouch();
+    this.initAutoRotateAndFullscreen();
+  }
+
+  initAutoRotateAndFullscreen() {
+    const tryLandscapeAndFullscreen = () => {
+      try {
+        if (screen.orientation && screen.orientation.lock) {
+          screen.orientation.lock('landscape').catch(() => {});
+        }
+      } catch (e) {}
+
+      try {
+        const docEl = document.documentElement;
+        if (docEl.requestFullscreen && !document.fullscreenElement) {
+          docEl.requestFullscreen().catch(() => {});
+        } else if (docEl.webkitRequestFullscreen && !document.webkitFullscreenElement) {
+          docEl.webkitRequestFullscreen();
+        }
+      } catch (e) {}
+    };
+
+    window.addEventListener('touchstart', tryLandscapeAndFullscreen, { once: true, passive: true });
+    window.addEventListener('click', tryLandscapeAndFullscreen, { once: true, passive: true });
   }
 
   initKeyboard() {
@@ -80,13 +103,18 @@ class InputController {
       if (!btn) return;
 
       const handleStart = (e) => {
-        e.preventDefault();
+        if (e.cancelable) e.preventDefault();
         this.state[key] = true;
+        btn.classList.add('btn-pressed');
+        if (navigator.vibrate) {
+          navigator.vibrate(15);
+        }
       };
 
       const handleEnd = (e) => {
-        e.preventDefault();
+        if (e.cancelable) e.preventDefault();
         this.state[key] = false;
+        btn.classList.remove('btn-pressed');
       };
 
       btn.addEventListener('touchstart', handleStart, { passive: false });

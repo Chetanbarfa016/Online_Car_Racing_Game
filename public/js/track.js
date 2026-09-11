@@ -512,6 +512,22 @@ class RacingTrack {
     }
   }
 
+  getDistanceToCenterline(pos) {
+    if (!this.trackCurve) return 0;
+    let minDistSq = Infinity;
+    const numSamples = 120;
+    for (let i = 0; i < numSamples; i++) {
+      const p = this.trackCurve.getPointAt(i / numSamples);
+      const dx = pos.x - p.x;
+      const dz = pos.z - p.z;
+      const dSq = dx * dx + dz * dz;
+      if (dSq < minDistSq) {
+        minDistSq = dSq;
+      }
+    }
+    return Math.sqrt(minDistSq);
+  }
+
   update(time) {
     const pulse = 0.6 + 0.4 * Math.sin(time * 6);
     this.animatedChevrons.forEach(c => {

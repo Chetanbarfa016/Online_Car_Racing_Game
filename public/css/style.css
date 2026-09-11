@@ -869,28 +869,115 @@ body, html {
 
 .touch-group {
   display: flex;
-  gap: 12px;
+  gap: 14px;
   align-items: flex-end;
   pointer-events: auto;
 }
 
 .touch-btn {
-  background: rgba(15, 20, 35, 0.7);
-  border: 2px solid rgba(0, 229, 255, 0.4);
+  background: rgba(10, 15, 30, 0.85);
+  border: 2px solid rgba(0, 229, 255, 0.6);
   color: #ffffff;
-  border-radius: 50%;
+  border-radius: 16px;
   font-family: 'Orbitron', sans-serif;
   font-weight: 900;
   display: flex;
   align-items: center;
   justify-content: center;
   touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  transition: all 0.1s ease;
 }
 
-.steer-btn { width: 62px; height: 62px; font-size: 1.3rem; }
-.gas-btn { width: 72px; height: 72px; background: rgba(0, 230, 118, 0.3); border-color: #00e676; font-size: 0.8rem; }
-.brake-btn { width: 56px; height: 56px; background: rgba(239, 68, 68, 0.3); border-color: #ef4444; font-size: 0.7rem; }
-.nitro-btn { width: 52px; height: 52px; background: rgba(255, 42, 95, 0.35); border-color: #ff2a5f; font-size: 0.7rem; }
+.touch-btn:active, .touch-btn.active {
+  transform: scale(0.92);
+  filter: brightness(1.3);
+}
+
+.steer-btn {
+  width: 78px;
+  height: 68px;
+  font-size: 0.85rem;
+  background: rgba(0, 229, 255, 0.2);
+  border-color: #00e5ff;
+  box-shadow: 0 0 15px rgba(0, 229, 255, 0.35);
+}
+
+.gas-btn {
+  width: 85px;
+  height: 75px;
+  background: linear-gradient(135deg, rgba(0, 230, 118, 0.35), rgba(0, 200, 83, 0.5));
+  border-color: #00e676;
+  font-size: 0.85rem;
+  box-shadow: 0 0 20px rgba(0, 230, 118, 0.4);
+}
+
+.brake-btn {
+  width: 75px;
+  height: 65px;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.35), rgba(220, 38, 38, 0.5));
+  border-color: #ef4444;
+  font-size: 0.75rem;
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+}
+
+.nitro-btn {
+  width: 68px;
+  height: 60px;
+  background: linear-gradient(135deg, rgba(255, 42, 95, 0.4), rgba(244, 63, 94, 0.6));
+  border-color: #ff2a5f;
+  font-size: 0.75rem;
+  box-shadow: 0 0 18px rgba(255, 42, 95, 0.45);
+}
+
+/* Mobile Screen Rotate Overlay Prompt */
+.rotate-screen-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 7, 18, 0.98);
+  z-index: 99999;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+}
+
+.rotate-box {
+  width: 90%;
+  max-width: 400px;
+  padding: 30px 20px;
+  border: 1px solid rgba(0, 229, 255, 0.4);
+  box-shadow: 0 0 30px rgba(0, 229, 255, 0.25);
+}
+
+.rotate-phone-icon {
+  font-size: 3.5rem;
+  margin-bottom: 12px;
+  animation: pulse 1.5s infinite;
+}
+
+.rotate-title {
+  color: #ffea00;
+  font-size: 1.3rem;
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+}
+
+.rotate-desc {
+  color: #cbd5e1;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  font-family: 'Rajdhani', sans-serif;
+}
+
+@media (orientation: portrait) and (max-width: 900px) {
+  .rotate-screen-overlay {
+    display: flex;
+  }
+}
 
 /* Overlays Center */
 .overlay-center {
@@ -1224,3 +1311,236 @@ body, html {
     font-size: 1.4rem;
   }
 }
+
+/* =================================================================
+   MOBILE AUTO ROTATION & TOUCH CONTROLS
+   ================================================================= */
+.rotate-screen-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(4, 6, 13, 0.96);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  z-index: 99999;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 20px;
+}
+
+/* Auto-show rotation prompt when device is in portrait mode on mobile/tablet */
+@media screen and (orientation: portrait) and (max-width: 900px) {
+  .rotate-screen-overlay {
+    display: flex !important;
+  }
+}
+
+.rotate-box {
+  max-width: 380px;
+  padding: 30px 25px;
+  text-align: center;
+  border: 1px solid rgba(0, 229, 255, 0.4);
+}
+
+.rotate-phone-icon {
+  font-size: 3.5rem;
+  margin-bottom: 15px;
+  animation: rotatePhone 2s infinite ease-in-out;
+}
+
+@keyframes rotatePhone {
+  0% { transform: rotate(0deg); }
+  50% { transform: rotate(-90deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.rotate-title {
+  font-size: 1.3rem;
+  color: #00e5ff;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  margin-bottom: 10px;
+}
+
+.rotate-desc {
+  font-size: 0.88rem;
+  color: #cbd5e1;
+  line-height: 1.4;
+  font-family: 'Rajdhani', sans-serif;
+}
+
+/* Ergonomic Mobile On-Screen Touch Controls */
+#mobile-touch-controls {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 45;
+  display: none;
+}
+
+/* Display touch controls on mobile or touch-capable screens */
+@media (max-width: 1024px), (pointer: coarse) {
+  #mobile-touch-controls {
+    display: block;
+  }
+}
+
+.touch-group {
+  position: absolute;
+  bottom: 20px;
+  display: flex;
+  gap: 12px;
+  pointer-events: auto;
+}
+
+.touch-steering {
+  left: 25px;
+}
+
+.touch-pedals {
+  right: 25px;
+}
+
+.touch-btn {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #fff;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 800;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 0.08s ease, background 0.08s ease, border-color 0.08s ease;
+}
+
+.steer-btn {
+  border-color: rgba(0, 229, 255, 0.5);
+  color: #00e5ff;
+}
+
+.gas-btn {
+  width: 82px;
+  height: 82px;
+  border-color: rgba(0, 230, 118, 0.6);
+  color: #00e676;
+  background: rgba(0, 230, 118, 0.15);
+}
+
+.brake-btn {
+  border-color: rgba(255, 42, 95, 0.6);
+  color: #ff2a5f;
+  background: rgba(255, 42, 95, 0.15);
+}
+
+.nitro-btn {
+  border-color: rgba(255, 234, 0, 0.6);
+  color: #ffea00;
+  background: rgba(255, 234, 0, 0.15);
+}
+
+.touch-btn.btn-pressed, .touch-btn:active {
+  transform: scale(0.92);
+  background: rgba(255, 255, 255, 0.35);
+  border-color: #fff;
+}
+
+/* Damage Screen Glitch / Flash */
+.damage-flash-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 48;
+  opacity: 0;
+  background: radial-gradient(circle, transparent 40%, rgba(255, 0, 50, 0.65) 100%);
+  transition: opacity 0.15s ease-out;
+}
+
+.damage-flash-overlay.flashing {
+  opacity: 1;
+}
+
+/* HUD Lifelines */
+.lifelines-hearts {
+  display: flex;
+  gap: 4px;
+  margin-top: 3px;
+}
+
+.heart-icon {
+  font-size: 1.1rem;
+  opacity: 0.3;
+  filter: grayscale(1);
+  transition: all 0.2s ease;
+}
+
+.heart-icon.active {
+  opacity: 1;
+  filter: grayscale(0) drop-shadow(0 0 6px #ff2a5f);
+}
+
+/* Wrecked / Elimination Overlay */
+#wrecked-overlay {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(5, 5, 10, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  pointer-events: auto;
+  z-index: 150;
+}
+
+.wrecked-box {
+  max-width: 440px;
+  padding: 35px 30px;
+  text-align: center;
+  border: 1px solid rgba(255, 42, 95, 0.6);
+  box-shadow: 0 0 35px rgba(255, 42, 95, 0.3);
+}
+
+.wreck-icon {
+  font-size: 3.5rem;
+  margin-bottom: 10px;
+  animation: pulse 1s infinite;
+}
+
+.wreck-title {
+  font-size: 1.8rem;
+  color: #ff2a5f;
+  font-weight: 900;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+
+.wreck-subtitle {
+  font-size: 0.9rem;
+  color: #94a3b8;
+  margin-bottom: 24px;
+  font-family: 'Rajdhani', sans-serif;
+}
+
+.wreck-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+

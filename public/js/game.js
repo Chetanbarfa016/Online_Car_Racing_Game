@@ -451,30 +451,41 @@ class Game {
     this.localCar.resetToTrack(cp.position, cp.tangent);
   }
 
-  // Crash Barrier Collision & Lifeline Check
+  // Crash Barrier Collision & Lifeline / Elimination Check
   checkTrackCollision(delta) {
     if (!this.localCar || this.localCar.isWrecked || this.gameState !== 'RACING') return;
 
     const carPos = this.localCar.position;
-    const curCp = this.track.checkpoints[this.localCar.currentCheckpoint];
-    if (!curCp) return;
+    const halfWidth = (this.track.trackWidth || 24) / 2; // 12m
+    const distToCenter = this.track.getDistanceToCenterline ? this.track.getDistanceToCenterline(carPos) : 0;
 
-    // Distance from track centerline
-    const distToCenter = carPos.distanceTo(curCp.position);
-    const halfWidth = (this.track.trackWidth || 24) / 2;
+    // Case 1: Road se zyada bahar chala gaya (> 13.5m) -> Instant OUT / Eliminated!
+    if (distToCenter > halfWidth + 1.5) {
+      this.localCar.takeDamage(4, carPos);
+      this.ui.updateLifelines(0, 4);
+      this.ui.flashDamageEffect();
+      this.ui.showToast('💥 OUT! OFF-TRACK (ROAD SE BAHAR GAYA)!');
+      this.ui.showWreckedOverlay();
+      return;
+    }
 
-    // If car hits barrier at high speed (> 35 km/h)
-    if (distToCenter > halfWidth + 1.2 && Math.abs(this.localCar.speed) > 35) {
-      if (this.localCar.damageCooldown <= 0) {
+    // Case 2: Deewar / Barrier se takraye
+    if (distToCenter >= halfWidth - 0.5) {
+      const speedAbs = Math.abs(this.localCar.speed);
+      if (speedAbs > 30) {
+        // High speed wall crash -> Instant OUT!
+        this.localCar.takeDamage(4, carPos);
+        this.ui.updateLifelines(0, 4);
+        this.ui.flashDamageEffect();
+        this.ui.showToast('💥 CRASH! DIWAR SE TAKRAYE - OUT!');
+        this.ui.showWreckedOverlay();
+      } else if (speedAbs > 8 && this.localCar.damageCooldown <= 0) {
+        // Minor wall scrape -> Deduct 1 life
         this.localCar.takeDamage(1, carPos);
         this.ui.updateLifelines(this.localCar.lives, this.localCar.maxLives);
         this.ui.flashDamageEffect();
-        this.ui.showToast('💥 CRASH! Lifeline: ' + this.localCar.lives + '/' + this.localCar.maxLives);
-
-        // Bounce back into track
-        this.localCar.speed = -this.localCar.speed * 0.35;
-
-        // Check for Elimination
+        this.ui.showToast('⚠️ WALL SCRAPE! Lifeline: ' + this.localCar.lives + '/' + this.localCar.maxLives);
+        this.localCar.speed = -this.localCar.speed * 0.4;
         if (this.localCar.lives <= 0) {
           this.ui.showWreckedOverlay();
         }

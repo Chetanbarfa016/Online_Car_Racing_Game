@@ -326,15 +326,24 @@
     <!-- MOBILE TOUCH CONTROLS -->
     <div id="mobile-touch-controls">
       <div class="touch-group touch-steering">
-        <button id="touch-left" class="touch-btn steer-btn">◀</button>
-        <button id="touch-right" class="touch-btn steer-btn">▶</button>
+        <button id="touch-left" class="touch-btn steer-btn" aria-label="Steer Left">◀ LEFT</button>
+        <button id="touch-right" class="touch-btn steer-btn" aria-label="Steer Right">RIGHT ▶</button>
       </div>
 
       <div class="touch-group touch-pedals">
-        <button id="touch-nitro" class="touch-btn nitro-btn">⚡ NOS</button>
-        <button id="touch-brake" class="touch-btn brake-btn">BRAKE</button>
-        <button id="touch-gas" class="touch-btn gas-btn">GAS 🏎️</button>
+        <button id="touch-nitro" class="touch-btn nitro-btn" aria-label="Nitro Boost">⚡ NOS</button>
+        <button id="touch-brake" class="touch-btn brake-btn" aria-label="Brake or Reverse">🛑 BRAKE</button>
+        <button id="touch-gas" class="touch-btn gas-btn" aria-label="Accelerate">🏎️ DRIVE</button>
       </div>
+    </div>
+  </div>
+
+  <!-- MOBILE ORIENTATION ROTATE PROMPT -->
+  <div id="rotate-device-prompt" class="rotate-screen-overlay">
+    <div class="rotate-box glass-card">
+      <div class="rotate-phone-icon">📱 ➔ 🔄</div>
+      <h2 class="rotate-title">ROTATE TO LANDSCAPE</h2>
+      <p class="rotate-desc">For the best 3D racing experience with full controls, please rotate your phone horizontally.</p>
     </div>
   </div>
 

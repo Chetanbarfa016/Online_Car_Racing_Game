@@ -1,4 +1,4 @@
-﻿// High-End Next-Gen 3D Supercar, Active Aero Spoilers, 4-Hit Lifeline System, Collision VFX & Sound Synth
+// High-End Next-Gen 3D Supercar, Active Aero Spoilers, 4-Hit Lifeline System, Collision VFX & Sound Synth
 class Car {
   constructor(scene, color = '#ff2a5f', isLocalPlayer = false, carModel = 'supercar', playerName = 'Racer') {
     this.scene = scene;
@@ -473,8 +473,9 @@ class Car {
   }
 
   takeDamage(amount = 1, impactPosition = null) {
-    if (this.damageCooldown > 0 || this.isWrecked) return;
-    this.damageCooldown = 1.0; // 1s invulnerability
+    if (this.isWrecked) return;
+    if (amount < 4 && this.damageCooldown > 0) return;
+    this.damageCooldown = 1.0; // 1s invulnerability for minor hits
 
     this.lives = Math.max(0, this.lives - amount);
     this.emitCrashSparks(impactPosition || this.position);
