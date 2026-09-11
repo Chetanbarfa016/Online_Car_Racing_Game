@@ -1,0 +1,14 @@
+﻿{
+  "advertisement": {
+    "interstitial": {
+      "autoShow": ["visibility_state_visible"]
+    }
+  },
+  "platforms": {
+    "mock": {
+      "storage": {
+        "default_type": "local_storage"
+      }
+    }
+  }
+}
