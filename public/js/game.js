@@ -40,6 +40,7 @@ class Game {
 
     // Victory Fireworks / Confetti
     this.fireworks = [];
+    this.isPlatformPaused = false;
 
     this.init();
   }
@@ -90,8 +91,9 @@ class Game {
     // 7. Interactive Showroom Orbit Drag Listeners
     this.initShowroomControls();
 
-    // 8. Window Resize Listener
+    // 8. Window Resize & Playgama Platform Bridge Listeners
     window.addEventListener('resize', () => this.onWindowResize());
+    this.initPlatformBridgeListeners();
 
     // 9. Spawn Initial Preview Local Car on Menu
     this.localCar = new Car(this.scene, this.ui.selectedColor, true, this.ui.selectedModel, 'Racer_1');
@@ -100,6 +102,46 @@ class Game {
 
     // 10. Start Animation Loop
     this.animate();
+  }
+
+  initPlatformBridgeListeners() {
+    // 1. Playgama Platform Sound & Audio State Listener (interstitial-ads-sound compliance)
+    if (window.bridge && bridge.platform) {
+      bridge.platform.on(bridge.EVENT_NAME.AUDIO_STATE_CHANGED, (isAudioEnabled) => {
+        console.log('Playgama Audio State:', isAudioEnabled);
+        if (this.localCar && this.localCar.audioCtx) {
+          if (!isAudioEnabled) {
+            this.localCar.audioCtx.suspend();
+          } else {
+            this.localCar.audioCtx.resume();
+          }
+        }
+      });
+
+      // 2. Playgama Platform Pause State Listener
+      bridge.platform.on(bridge.EVENT_NAME.PAUSE_STATE_CHANGED, (isPaused) => {
+        console.log('Playgama Pause State:', isPaused);
+        this.isPlatformPaused = isPaused;
+        if (isPaused && this.localCar && this.localCar.audioCtx) {
+          this.localCar.audioCtx.suspend();
+        } else if (!isPaused && this.localCar && this.localCar.audioCtx) {
+          this.localCar.audioCtx.resume();
+        }
+      });
+    }
+
+    // 3. Browser Tab Switch (Visibility) Sound & Pause Compliance
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        if (this.localCar && this.localCar.audioCtx) {
+          this.localCar.audioCtx.suspend();
+        }
+      } else {
+        if (this.localCar && this.localCar.audioCtx && !this.isPlatformPaused) {
+          this.localCar.audioCtx.resume();
+        }
+      }
+    });
   }
 
   initStudioEnvironment() {
@@ -860,6 +902,11 @@ class Game {
 
     const delta = Math.min(this.clock.getDelta(), 0.1);
     const now = performance.now();
+
+    if (this.isPlatformPaused) {
+      this.renderer.render(this.scene, this.camera);
+      return;
+    }
 
     if (this.track) {
       this.track.update(now * 0.001);

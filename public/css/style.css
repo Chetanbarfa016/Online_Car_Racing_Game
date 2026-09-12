@@ -1678,3 +1678,37 @@ body, html {
   transform: translate(-50%, -50%) scale(1.15);
 }
 
+/* Playgama Rewarded Ad Attribution Badges */
+.ad-tag-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffea00;
+  color: #0b0f19;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.68rem;
+  font-weight: 900;
+  padding: 2px 7px;
+  border-radius: 4px;
+  margin-right: 8px;
+  letter-spacing: 1px;
+  box-shadow: 0 0 8px rgba(255, 234, 0, 0.7);
+  vertical-align: middle;
+}
+
+.btn-reward-ad {
+  background: linear-gradient(135deg, rgba(217, 70, 239, 0.85), rgba(99, 102, 241, 0.85)) !important;
+  border: 1px solid rgba(217, 70, 239, 0.6) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 0 15px rgba(217, 70, 239, 0.4) !important;
+}
+
+.btn-reward-ad:hover {
+  background: linear-gradient(135deg, #d946ef, #6366f1) !important;
+  box-shadow: 0 0 25px rgba(217, 70, 239, 0.8) !important;
+}
+

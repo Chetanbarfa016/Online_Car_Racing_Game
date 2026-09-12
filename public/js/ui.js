@@ -238,20 +238,37 @@ class UIController {
       });
     }
 
+    // Playgama Compliant Rewarded Ad: Free Respawn [AD]
     const btnWatchAdRespawn = document.getElementById('btn-watch-ad-respawn');
     if (btnWatchAdRespawn) {
       btnWatchAdRespawn.addEventListener('click', () => {
-        this.showAdOverlay(() => {
+        this.showRewardedAd('free_respawn', () => {
           document.getElementById('wrecked-overlay').style.display = 'none';
           if (this.game.localCar) {
             this.game.localCar.repair();
             this.game.resetLocalCar();
             this.updateLifelines(this.game.localCar.lives, this.game.localCar.maxLives);
-            this.showToast('✨ Rewarded! Free Full Repair Restored!');
+            this.showToast('✨ Rewarded! Free Full Repair Restored! [AD]');
           }
         });
       });
     }
+
+    // Playgama Compliant Rewarded Ad: Free 100% Nitro Boost in Garage [AD]
+    const btnGarageNitro = document.getElementById('btn-garage-bonus-nitro');
+    if (btnGarageNitro) {
+      btnGarageNitro.addEventListener('click', () => {
+        this.showRewardedAd('bonus_nitro', () => {
+          if (this.game.localCar) {
+            this.game.localCar.nitroAmount = 100;
+          }
+          this.showToast('🚀 REWARDED! +100% NITRO BOOST ACTIVATED FOR RACE! [AD]');
+        });
+      });
+    }
+
+    // Check platform rewarded support and update visibility
+    this.updateRewardedAdSupportUI();
 
     const btnWreckGarage = document.getElementById('btn-wreck-garage');
     if (btnWreckGarage) {
@@ -294,6 +311,98 @@ class UIController {
     if (overlay) {
       overlay.style.display = 'flex';
     }
+  }
+
+  // Update UI based on platform support for Rewarded Ads
+  updateRewardedAdSupportUI() {
+    if (window.bridge && bridge.advertisement && typeof bridge.advertisement.isRewardedSupported !== 'undefined') {
+      const isSupported = bridge.advertisement.isRewardedSupported;
+      document.querySelectorAll('.btn-reward-ad').forEach(btn => {
+        btn.style.display = isSupported ? 'flex' : 'none';
+      });
+    }
+  }
+
+  // Playgama Official Rewarded Ad Integration (Strict State Validation)
+  showRewardedAd(placement = 'bonus_nitro', onRewardSuccess) {
+    if (window.bridge && bridge.advertisement && bridge.advertisement.isRewardedSupported) {
+      let hasRewarded = false;
+
+      // Playgama Rule: Reward player ONLY when state is 'rewarded'
+      const onStateChanged = (state) => {
+        console.log('Playgama Rewarded State:', state);
+        if (state === 'rewarded') {
+          hasRewarded = true;
+        } else if (state === 'closed') {
+          if (bridge.advertisement.off) {
+            bridge.advertisement.off(bridge.EVENT_NAME.REWARDED_STATE_CHANGED, onStateChanged);
+          }
+          if (hasRewarded) {
+            if (onRewardSuccess) onRewardSuccess();
+          } else {
+            this.showToast('⚠️ Video closed before completion. No reward granted.');
+          }
+        } else if (state === 'failed') {
+          if (bridge.advertisement.off) {
+            bridge.advertisement.off(bridge.EVENT_NAME.REWARDED_STATE_CHANGED, onStateChanged);
+          }
+          this.showToast('⚠️ Ad is temporarily unavailable.');
+        }
+      };
+
+      bridge.advertisement.on(bridge.EVENT_NAME.REWARDED_STATE_CHANGED, onStateChanged);
+      bridge.advertisement.showRewarded(placement);
+      return;
+    }
+
+    // Fallback: Local / Standalone Rewarded Ad Simulation (Enforcing Full Watch)
+    this.showCustomRewardedSimulator(onRewardSuccess);
+  }
+
+  showCustomRewardedSimulator(onRewardSuccess) {
+    const adOverlay = document.getElementById('ad-overlay');
+    const timerEl = document.getElementById('ad-countdown');
+    const skipBtn = document.getElementById('btn-skip-ad');
+    const brandTitle = document.getElementById('ad-brand-title');
+    const brandDesc = document.getElementById('ad-brand-desc');
+    const ctaLink = document.getElementById('ad-cta-link');
+
+    if (!adOverlay) {
+      if (onRewardSuccess) onRewardSuccess();
+      return;
+    }
+
+    if (brandTitle) brandTitle.innerText = 'REWARDED VIDEO AD [AD]';
+    if (brandDesc) brandDesc.innerText = 'Watch the full video to claim your in-game reward!';
+    if (ctaLink) {
+      ctaLink.innerText = 'CLAIM REWARD';
+      ctaLink.href = '#';
+    }
+
+    adOverlay.style.display = 'flex';
+    if (skipBtn) skipBtn.style.display = 'none';
+
+    let timeLeft = 5;
+    if (timerEl) timerEl.innerText = 'Reward in ' + timeLeft + 's (Do not close)';
+
+    const interval = setInterval(() => {
+      timeLeft--;
+      if (timeLeft <= 0) {
+        clearInterval(interval);
+        if (timerEl) timerEl.innerText = '✅ Reward Unlocked! Click Finish to Claim';
+        if (skipBtn) {
+          skipBtn.style.display = 'inline-block';
+          skipBtn.innerText = 'CLAIM REWARD ✅';
+          skipBtn.onclick = () => {
+            adOverlay.style.display = 'none';
+            skipBtn.onclick = null;
+            if (onRewardSuccess) onRewardSuccess();
+          };
+        }
+      } else {
+        if (timerEl) timerEl.innerText = 'Reward in ' + timeLeft + 's';
+      }
+    }, 1000);
   }
 
   // Interstitial Ad Management (Playgama Bridge + Google Ads / Sponsor Simulation)
