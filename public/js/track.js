@@ -88,28 +88,31 @@ class RacingTrack {
         new THREE.Vector3(-90, 0, -30),
         new THREE.Vector3(-110, 0, 30),
         new THREE.Vector3(-90, 0, 110),
-        new THREE.Vector3(-40, 0, 130),
-        new THREE.Vector3(-15, 0, 60),
+        new THREE.Vector3(-55, 0, 120),
+        new THREE.Vector3(-45, 0, 50),
+        new THREE.Vector3(-25, 0, -20),
         new THREE.Vector3(0, 0, 0)
       ];
     } else {
-      // Default: Neon Cyber City
+      // Default: Neon Cyber City (Wide open starting straight & zero overlapping roads)
       this.waypoints = [
         new THREE.Vector3(0, 0, 0),
-        new THREE.Vector3(0, 0, 140),
-        new THREE.Vector3(45, 0, 210),
-        new THREE.Vector3(130, 0, 210),
-        new THREE.Vector3(200, 0, 140),
-        new THREE.Vector3(200, 0, 30),
+        new THREE.Vector3(0, 0, 150),
+        new THREE.Vector3(50, 0, 220),
+        new THREE.Vector3(140, 0, 220),
+        new THREE.Vector3(210, 0, 140),
+        new THREE.Vector3(210, 0, 30),
         new THREE.Vector3(140, 0, -60),
         new THREE.Vector3(80, 0, -95),
         new THREE.Vector3(0, 0, -140),
         new THREE.Vector3(-70, 0, -100),
         new THREE.Vector3(-135, 0, -40),
         new THREE.Vector3(-170, 0, 50),
-        new THREE.Vector3(-145, 0, 160),
-        new THREE.Vector3(-70, 0, 190),
-        new THREE.Vector3(-25, 0, 90),
+        new THREE.Vector3(-150, 0, 160),
+        new THREE.Vector3(-85, 0, 180),
+        new THREE.Vector3(-65, 0, 80),
+        new THREE.Vector3(-45, 0, -15),
+        new THREE.Vector3(-22, 0, -35),
         new THREE.Vector3(0, 0, 0)
       ];
     }
@@ -298,39 +301,44 @@ class RacingTrack {
   }
 
   buildCurbsAndGuardrails(points) {
-    const railColor = this.trackId === 'jungle_safari' ? 0x00e676 : this.trackId === 'city_center' ? 0x00b4d8 : this.trackId === 'desert_canyon' ? 0xff9800 : this.trackId === 'tokyo_circuit' ? 0xff0055 : 0x00e5ff;
-    const railMat = new THREE.MeshStandardMaterial({
-      color: railColor,
-      emissive: railColor,
-      emissiveIntensity: 0.4,
-      metalness: 0.85,
-      roughness: 0.15
-    });
-
-    const curbMatRed = new THREE.MeshStandardMaterial({ color: 0xff0033, roughness: 0.6 });
-    const curbMatWhite = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 });
+    const curbMatRed = new THREE.MeshStandardMaterial({ color: 0xff0033, roughness: 0.5, metalness: 0.2 });
+    const curbMatWhite = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.5, metalness: 0.2 });
     const halfW = (this.trackWidth / 2);
 
-    for (let i = 0; i < points.length; i += 3) {
+    for (let i = 0; i < points.length; i += 4) {
       const p1 = points[i];
       const p2 = points[(i + 1) % points.length];
       const tangent = new THREE.Vector3().subVectors(p2, p1).normalize();
       const up = new THREE.Vector3(0, 1, 0);
       const right = new THREE.Vector3().crossVectors(tangent, up).normalize();
 
-      [-halfW - 1.2, halfW + 1.2].forEach(offset => {
-        const postPos = new THREE.Vector3().copy(p1).addScaledVector(right, offset);
-        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 1.4, 8), railMat);
-        post.position.set(postPos.x, 0.7, postPos.z);
-        this.scene.add(post);
-        this.environmentMeshes.push(post);
-      });
+      // Don't spawn curbs on straight start line (z between -20 and 140, |x| < 30) to keep start 100% clean
+      if (p1.z >= -25 && p1.z <= 145 && Math.abs(p1.x) < 30) {
+        continue;
+      }
 
-      const curbMat = (Math.floor(i / 3) % 2 === 0) ? curbMatRed : curbMatWhite;
-      [-halfW - 0.4, halfW + 0.4].forEach(offset => {
+      const curbMat = (Math.floor(i / 4) % 2 === 0) ? curbMatRed : curbMatWhite;
+      [-halfW - 0.35, halfW + 0.35].forEach(offset => {
         const curbPos = new THREE.Vector3().copy(p1).addScaledVector(right, offset);
-        const curb = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.12, 1.8), curbMat);
-        curb.position.set(curbPos.x, 0.1, curbPos.z);
+
+        // Check if curbPos is close to ANY other track segment (avoid middle clutter between roads)
+        let tooCloseToOtherTrack = false;
+        for (let j = 0; j < points.length; j += 10) {
+          const distIdx = Math.abs(j - i);
+          const loopDistIdx = Math.min(distIdx, points.length - distIdx);
+          if (loopDistIdx > 25) {
+            const dx = points[j].x - curbPos.x;
+            const dz = points[j].z - curbPos.z;
+            if (dx * dx + dz * dz < (this.trackWidth + 6) * (this.trackWidth + 6)) {
+              tooCloseToOtherTrack = true;
+              break;
+            }
+          }
+        }
+        if (tooCloseToOtherTrack) return;
+
+        const curb = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.08, 1.9), curbMat);
+        curb.position.set(curbPos.x, 0.06, curbPos.z);
         curb.rotation.y = Math.atan2(tangent.x, tangent.z);
         this.scene.add(curb);
         this.environmentMeshes.push(curb);
