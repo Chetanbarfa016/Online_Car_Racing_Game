@@ -571,6 +571,20 @@ class UIController {
       this._adInterval = null;
     }
 
+    // Hide any overlapping screens so ad modal is clean and focused
+    const podiumEl = document.getElementById('podium-overlay');
+    if (podiumEl && podiumEl.style.display === 'flex') {
+      this._restorePodiumAfterAd = true;
+      podiumEl.style.display = 'none';
+      podiumEl.classList.remove('active');
+    }
+    const wreckedEl = document.getElementById('wrecked-overlay');
+    if (wreckedEl && wreckedEl.style.display === 'flex') {
+      this._restoreWreckedAfterAd = true;
+      wreckedEl.style.display = 'none';
+      wreckedEl.classList.remove('active');
+    }
+
     const timerEl = document.getElementById('ad-countdown');
     const skipBtn = document.getElementById('btn-skip-ad');
     const brandTitle = document.getElementById('ad-brand-title');
@@ -600,6 +614,7 @@ class UIController {
     if (timerEl) timerEl.innerText = '0:0' + secondsLeft;
 
     adOverlay.style.display = 'flex';
+    adOverlay.classList.add('active');
 
     if (skipBtn) {
       if (isRewarded) {
@@ -667,6 +682,24 @@ class UIController {
     const adOverlay = document.getElementById('ad-overlay');
     if (adOverlay) {
       adOverlay.style.display = 'none';
+      adOverlay.classList.remove('active');
+    }
+
+    if (this._restorePodiumAfterAd) {
+      this._restorePodiumAfterAd = false;
+      const podiumEl = document.getElementById('podium-overlay');
+      if (podiumEl) {
+        podiumEl.style.display = 'flex';
+        podiumEl.classList.add('active');
+      }
+    }
+    if (this._restoreWreckedAfterAd) {
+      this._restoreWreckedAfterAd = false;
+      const wreckedEl = document.getElementById('wrecked-overlay');
+      if (wreckedEl) {
+        wreckedEl.style.display = 'flex';
+        wreckedEl.classList.add('active');
+      }
     }
   }
 

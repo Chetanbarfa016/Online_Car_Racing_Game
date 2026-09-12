@@ -449,8 +449,22 @@
     </div>
   </div>
 
+  <!-- PODIUM & WINNER OVERLAY -->
+  <div id="podium-overlay" class="overlay" style="display: none;">
+    <div class="podium-box glass-card">
+      <h1 class="trophy-title">🏆 RACE FINISHED!</h1>
+      <div class="winner-list" id="podium-winners-list"></div>
+      <div class="podium-actions">
+        <button id="btn-back-lobby" class="btn btn-hero">BACK TO GARAGE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATIONS -->
+  <div id="toast" class="toast"></div>
+
   <!-- OFFICIAL PLAYGAMA AD OVERLAY (Compliant, Centered, High-Impact Visual Banner) -->
-  <div id="ad-overlay" class="overlay-center" style="display: none; z-index: 999999;">
+  <div id="ad-overlay" class="ad-modal-overlay" style="display: none;">
     <div class="ad-card glass-card">
       <div class="ad-header-row">
         <span class="ad-badge-tag">SPONSORED [AD]</span>
@@ -479,20 +493,6 @@
       <small id="ad-footer-note" class="ad-footer-note">Sponsored by Playgama Game Network</small>
     </div>
   </div>
-
-  <!-- PODIUM & WINNER OVERLAY -->
-  <div id="podium-overlay" class="overlay" style="display: none;">
-    <div class="podium-box glass-card">
-      <h1 class="trophy-title">🏆 RACE FINISHED!</h1>
-      <div class="winner-list" id="podium-winners-list"></div>
-      <div class="podium-actions">
-        <button id="btn-back-lobby" class="btn btn-hero">BACK TO GARAGE</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- TOAST NOTIFICATIONS -->
-  <div id="toast" class="toast"></div>
 
   <!-- GAME ENGINE SCRIPTS -->
   <script src="./js/track.js"></script>
