@@ -183,6 +183,28 @@
         </div>
       </div>
 
+      <!-- Nitro Boost System Upgrade -->
+      <div class="custom-block">
+        <label class="block-label">⚡ NITRO SYSTEM TUNING</label>
+        <div class="nitro-tuning-grid" id="nitro-tuning-options">
+          <button class="nitro-chip active" data-nitro-stage="1" title="Standard high-pressure nitro">
+            <span class="nitro-chip-icon">⚡</span>
+            <span class="nitro-chip-name">STAGE 1: STANDARD</span>
+            <small class="nitro-chip-desc">Balanced Burn • Clean Control</small>
+          </button>
+          <button class="nitro-chip" data-nitro-stage="2" title="Twin-Turbo nitrous oxide for high speed">
+            <span class="nitro-chip-icon">🔥</span>
+            <span class="nitro-chip-name">STAGE 2: TWIN-TURBO</span>
+            <small class="nitro-chip-desc">+8% Top Speed • Fast Drift Refill</small>
+          </button>
+          <button class="nitro-chip" data-nitro-stage="3" title="Shockwave plasma boost with purple flame">
+            <span class="nitro-chip-icon">💥</span>
+            <span class="nitro-chip-name">STAGE 3: SHOCKWAVE</span>
+            <small class="nitro-chip-desc">+15% Top Speed • Super Drift Refill</small>
+          </button>
+        </div>
+      </div>
+
       <!-- Time of Day / Environment Mode Selector -->
       <div class="custom-block">
         <label class="block-label">TIME OF DAY / LIGHTING</label>
@@ -361,9 +383,12 @@
             <div id="rpm-bar-fill" class="rpm-bar-fill" style="width: 20%;"></div>
           </div>
         </div>
-        <!-- Nitro Bar -->
-        <div class="nitro-bar-wrap">
-          <div class="nitro-label">NITRO BOOST (SHIFT / NOS)</div>
+        <!-- Nitro Bar & Clickable Tap Boost Trigger -->
+        <div class="nitro-bar-wrap" id="hud-nitro-click-btn" title="Tap or Press SHIFT/N for Nitro Boost">
+          <div class="nitro-bar-header">
+            <span class="nitro-label">NITRO BOOST</span>
+            <button id="hud-nitro-tap-btn" class="hud-nitro-pill">⚡ NOS BOOST</button>
+          </div>
           <div class="nitro-bar-bg">
             <div id="nitro-bar-fill" class="nitro-bar-fill" style="width: 100%;"></div>
           </div>
@@ -388,6 +413,7 @@
       </div>
 
       <div class="touch-group touch-pedals">
+        <button id="touch-drift" class="touch-btn drift-btn" aria-label="Handbrake Drift">💨 DRIFT</button>
         <button id="touch-nitro" class="touch-btn nitro-btn" aria-label="Nitro Boost">⚡ NOS</button>
         <button id="touch-brake" class="touch-btn brake-btn" aria-label="Brake or Reverse">🛑 BRAKE</button>
         <button id="touch-gas" class="touch-btn gas-btn" aria-label="Accelerate">🏎️ DRIVE</button>

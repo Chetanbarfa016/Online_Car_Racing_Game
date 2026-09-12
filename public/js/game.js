@@ -583,7 +583,6 @@ class Game {
 
     const carPos = this.localCar.position;
     const halfWidth = (this.track.trackWidth || 24) / 2; // 12m
-    const distToCenter = this.track.getDistanceToCenterline ? this.track.getDistanceToCenterline(carPos) : 0;
     const curCp = (this.track.checkpoints && this.track.checkpoints[this.localCar.currentCheckpoint]) ? this.track.checkpoints[this.localCar.currentCheckpoint] : { position: new THREE.Vector3(0, 0.46, 0) };
 
     // Check Stunt Ramps on Track
@@ -611,13 +610,19 @@ class Game {
       });
     }
 
-    // Case 1: Road se zyada bahar chala gaya (> 14m) -> Smoothly steer back onto road with momentum
-    if (distToCenter > halfWidth + 1.8) {
-      // Smoothly guide back onto the drivable track surface without stopping the race
-      this.localCar.position.x = THREE.MathUtils.lerp(this.localCar.position.x, curCp.position.x, delta * 3.5);
-      this.localCar.position.z = THREE.MathUtils.lerp(this.localCar.position.z, curCp.position.z, delta * 3.5);
+    const closest = (this.track && this.track.getClosestCenterlinePoint) 
+      ? this.track.getClosestCenterlinePoint(carPos) 
+      : { point: curCp.position, tangent: new THREE.Vector3(0, 0, 1), distance: 0 };
+    const distToCenter = closest.distance;
+
+    // Case 1: Road se zyada bahar chala gaya (> halfWidth + 1.2) -> Smoothly steer back onto nearest road surface
+    if (distToCenter > halfWidth + 1.2) {
+      // Gently deflect towards closest centerline point without sudden jumps
+      const pullDir = new THREE.Vector3().subVectors(closest.point, carPos).setY(0).normalize();
+      const pullDist = Math.min(distToCenter - halfWidth, 16 * delta);
+      this.localCar.position.addScaledVector(pullDir, pullDist);
       this.localCar.mesh.position.copy(this.localCar.position);
-      this.localCar.speed = Math.max(35, this.localCar.speed * 0.88);
+      this.localCar.speed = Math.max(35, this.localCar.speed * 0.92);
       this.localCar.emitCrashSparks(carPos);
       return;
     }
@@ -626,15 +631,15 @@ class Game {
     if (distToCenter >= halfWidth - 0.4) {
       const speedAbs = Math.abs(this.localCar.speed);
       if (speedAbs > 10) {
-        // Apply realistic wall friction deceleration (speed kam hoti hai lekin car smooth chalti rehti hai)
-        this.localCar.speed *= Math.max(0.65, 1 - 0.55 * delta);
+        // Apply smooth wall friction deceleration
+        this.localCar.speed *= Math.max(0.72, 1 - 0.38 * delta);
 
         // Continuous shower of sparks along the barrier
         this.localCar.emitCrashSparks(carPos);
 
         // Gently deflect car away from the wall so it slides smoothly along the barrier without getting stuck
-        const pushDir = new THREE.Vector3().subVectors(curCp.position, carPos).setY(0).normalize();
-        this.localCar.position.addScaledVector(pushDir, 0.28);
+        const pushDir = new THREE.Vector3().subVectors(closest.point, carPos).setY(0).normalize();
+        this.localCar.position.addScaledVector(pushDir, 0.22);
         this.localCar.mesh.position.copy(this.localCar.position);
 
         if (this.localCar.damageCooldown <= 0) {

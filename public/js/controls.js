@@ -60,6 +60,7 @@ class InputController {
           break;
         case 'ShiftLeft':
         case 'ShiftRight':
+        case 'KeyN':
           this.state.nitro = true;
           break;
         case 'Space':
@@ -98,6 +99,7 @@ class InputController {
           break;
         case 'ShiftLeft':
         case 'ShiftRight':
+        case 'KeyN':
           this.state.nitro = false;
           break;
         case 'Space':
@@ -142,6 +144,9 @@ class InputController {
     bindTouch('touch-gas', 'gas');
     bindTouch('touch-brake', 'brake');
     bindTouch('touch-nitro', 'nitro');
+    bindTouch('touch-drift', 'drift');
+    bindTouch('hud-nitro-tap-btn', 'nitro');
+    bindTouch('hud-nitro-click-btn', 'nitro');
   }
 
   getState() {

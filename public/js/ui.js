@@ -113,6 +113,22 @@ class UIController {
       });
     });
 
+    // 1e. Nitro Tuning Selector (Standard, Supercharged, Plasma Shockwave)
+    const nitroChips = document.querySelectorAll('.nitro-chip');
+    nitroChips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        nitroChips.forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        const stage = parseInt(chip.getAttribute('data-nitro-stage') || '1', 10);
+        if (this.game && this.game.localCar) {
+          this.game.localCar.setNitroTune(stage);
+        }
+        const nameEl = chip.querySelector('.nitro-chip-name');
+        const name = nameEl ? nameEl.innerText : 'Stage ' + stage;
+        this.showToast('⚡ Nitro Tuning Installed: ' + name);
+      });
+    });
+
     // 2. Mode Selector (Hotspot vs Online)
     const hotspotBtn = document.getElementById('mode-hotspot-btn');
     const onlineBtn = document.getElementById('mode-online-btn');

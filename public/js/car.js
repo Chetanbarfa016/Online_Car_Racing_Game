@@ -39,12 +39,16 @@ class Car {
     this.stuntSpinSpeed = 0;
     this.lastStuntAwarded = false;
 
-    // Nitro state
+    // Nitro state & Tuning Options
     this.nitroAmount = 100;
     this.nitroMax = 100;
+    this.nitroTuneStage = 1;
+    this.nitroRechargeRate = 18;
     this.isBoosting = false;
     this.isDrifting = false;
     this.isBraking = false;
+    this.driftYawAngle = 0;
+    this.velocityHeading = 0;
 
     // 5-Hit Crash Lifeline / Health System
     this.maxLives = 5;
@@ -687,6 +691,21 @@ class Car {
     this.createNameTag();
   }
 
+  setNitroTune(stage = 1) {
+    this.nitroTuneStage = stage;
+    const baseNitroSpeed = (this.stats && this.stats.nitroMaxSpeed) ? this.stats.nitroMaxSpeed : 255;
+    if (stage === 1) {
+      this.nitroMaxSpeed = baseNitroSpeed;
+      this.nitroRechargeRate = 18;
+    } else if (stage === 2) {
+      this.nitroMaxSpeed = baseNitroSpeed * 1.08;
+      this.nitroRechargeRate = 26;
+    } else if (stage === 3) {
+      this.nitroMaxSpeed = baseNitroSpeed * 1.15;
+      this.nitroRechargeRate = 34;
+    }
+  }
+
   initParticleSystems() {
     // Tire Smoke Pool
     const smokeGeo = new THREE.SphereGeometry(0.25, 6, 6);
@@ -695,7 +714,7 @@ class Car {
       const p = new THREE.Mesh(smokeGeo, smokeMat.clone());
       p.visible = false;
       this.scene.add(p);
-      this.smokePool.push({ mesh: p, velocity: new THREE.Vector3(), life: 0, maxLife: 0.8, scale: 1 });
+      this.smokePool.push({ mesh: p, velocity: new THREE.Vector3(), life: 0, maxLife: 0.8, scale: 0.5 });
     }
 
     // Collision Spark Pool
@@ -711,18 +730,19 @@ class Car {
 
   emitTireSmoke(delta) {
     if (!this.isDrifting && Math.abs(this.speed) < 130) return;
+    const spawnChance = this.isDrifting ? 0.2 : 0.45;
     [-1.1, 1.1].forEach(sideX => {
-      if (Math.random() > 0.4) {
+      if (Math.random() > spawnChance) {
         const particle = this.smokePool.find(p => !p.mesh.visible);
         if (particle) {
           const spawnOffset = new THREE.Vector3(sideX, 0.15, -1.4).applyEuler(this.rotation);
           particle.mesh.position.copy(this.position).add(spawnOffset);
           particle.mesh.visible = true;
           particle.life = 0;
-          particle.scale = 0.5;
-          particle.mesh.scale.set(0.5, 0.5, 0.5);
-          particle.mesh.material.opacity = 0.45;
-          particle.velocity.set((Math.random() - 0.5) * 2, Math.random() * 1.5 + 0.5, (Math.random() - 0.5) * 2);
+          particle.scale = this.isDrifting ? 0.7 : 0.5;
+          particle.mesh.scale.set(particle.scale, particle.scale, particle.scale);
+          particle.mesh.material.opacity = this.isDrifting ? 0.6 : 0.45;
+          particle.velocity.set((Math.random() - 0.5) * 2.5, Math.random() * 1.8 + 0.5, (Math.random() - 0.5) * 2.5);
         }
       }
     });
@@ -878,31 +898,34 @@ class Car {
     }
 
     // Triple-Stage Nitro State Logic (Yellow -> Blue -> Purple Shockwave)
-    if (input.nitro && this.nitroAmount > 5 && input.gas) {
+    const isNitroPressed = input.nitro && this.nitroAmount > 3;
+    if (isNitroPressed) {
+      this.isBoosting = true;
       if (this.nitroAmount > 80 || this.isShockwave) {
         // Stage 3: NITRO SHOCKWAVE (Purple Superboost)
         this.nitroStage = 3;
         this.isShockwave = true;
-        this.isBoosting = true;
-        this.nitroAmount = Math.max(0, this.nitroAmount - delta * 34);
+        this.nitroAmount = Math.max(0, this.nitroAmount - delta * 32);
       } else if (this.nitroAmount > 38) {
         // Stage 2: Perfect Blue Nitro
         this.nitroStage = 2;
         this.isShockwave = false;
-        this.isBoosting = true;
-        this.nitroAmount = Math.max(0, this.nitroAmount - delta * 26);
+        this.nitroAmount = Math.max(0, this.nitroAmount - delta * 24);
       } else {
         // Stage 1: Yellow Nitro
         this.nitroStage = 1;
         this.isShockwave = false;
-        this.isBoosting = true;
-        this.nitroAmount = Math.max(0, this.nitroAmount - delta * 20);
+        this.nitroAmount = Math.max(0, this.nitroAmount - delta * 18);
       }
     } else {
       this.nitroStage = 0;
       this.isBoosting = false;
       this.isShockwave = false;
-      this.nitroAmount = Math.min(this.nitroMax, this.nitroAmount + delta * 9);
+      // Drift refills nitro significantly faster (+28% / sec)
+      const rechargeRate = (this.isDrifting && Math.abs(this.speed) > 25) 
+        ? (this.nitroRechargeRate || 18) * 1.8 
+        : (this.nitroRechargeRate || 18) * 0.6;
+      this.nitroAmount = Math.min(this.nitroMax, this.nitroAmount + delta * rechargeRate);
     }
 
     // Shockwave Aura & Exhaust Flame Animation
@@ -952,8 +975,9 @@ class Car {
     const targetMaxSpeed = this.isBoosting ? (this.nitroMaxSpeed * shockwaveMultiplier) : this.maxSpeed;
 
     this.isBraking = input.brake && this.speed > 5;
-    if (input.gas) {
-      const accelRate = this.isShockwave ? (this.acceleration * 2.1) : (this.isBoosting ? this.acceleration * 1.75 : this.acceleration);
+    const isAccelerating = input.gas || isNitroPressed;
+    if (isAccelerating) {
+      const accelRate = this.isShockwave ? (this.acceleration * 2.2) : (this.isBoosting ? this.acceleration * 1.85 : this.acceleration);
       if (this.speed < targetMaxSpeed) {
         this.speed += accelRate * delta;
       }
@@ -1001,12 +1025,12 @@ class Car {
     }
 
     const speedRatio = Math.abs(this.speed) / this.maxSpeed;
-    this.isDrifting = input.drift && speedRatio > 0.35;
+    this.isDrifting = (input.drift || false) && (Math.abs(this.speed) > 25);
 
-    // Steering & Turn Dynamics
+    // Steering & Lateral Slip Drift Dynamics
     if (Math.abs(this.speed) > 1) {
       const dir = this.speed >= 0 ? 1 : -1;
-      const turnMultiplier = (this.isDrifting ? 1.65 : 1.0) * (1 - speedRatio * 0.28);
+      const turnMultiplier = (this.isDrifting ? 1.55 : 1.0) * (1 - speedRatio * 0.22);
 
       if (input.left) {
         this.rotation.y += this.turnSpeed * turnMultiplier * delta * dir;
@@ -1021,6 +1045,11 @@ class Car {
       this.steeringAngle = THREE.MathUtils.lerp(this.steeringAngle, 0, delta * 14);
     }
 
+    // Visual Drift Body Yaw Angle
+    const driftSteer = input.left ? 1 : (input.right ? -1 : 0);
+    const targetDriftYaw = this.isDrifting ? (driftSteer * 0.40) : 0;
+    this.driftYawAngle = THREE.MathUtils.lerp(this.driftYawAngle, targetDriftYaw, delta * 8);
+
     // Front Wheel Steering & Camber Tilt
     this.frontWheelHubs.forEach((hub) => {
       hub.rotation.y = this.steeringAngle;
@@ -1034,7 +1063,7 @@ class Car {
     }
 
     // Suspension Physics (Squat, Dive & Body Roll)
-    const targetPitch = (input.gas ? -0.065 : 0) + (this.isBraking ? 0.095 : 0);
+    const targetPitch = (isAccelerating ? -0.065 : 0) + (this.isBraking ? 0.095 : 0);
     this.pitchAngle = THREE.MathUtils.lerp(this.pitchAngle, targetPitch, delta * 10);
 
     const targetRoll = -this.steeringAngle * speedRatio * 0.3;
@@ -1082,12 +1111,26 @@ class Car {
       this.bodyGroup.position.y = roadJitter + engineHarmonic;
       this.bodyGroup.rotation.x = this.pitchAngle;
       this.bodyGroup.rotation.z = this.rollAngle;
-      this.bodyGroup.rotation.y = 0;
+      this.bodyGroup.rotation.y = this.driftYawAngle;
     }
 
-    const forward = new THREE.Vector3(Math.sin(this.rotation.y), 0, Math.cos(this.rotation.y));
+    // Smooth Lateral Slip during Drift
+    if (this.velocityHeading === undefined) {
+      this.velocityHeading = this.rotation.y;
+    }
+
+    if (this.isDrifting) {
+      // Velocity direction lags behind vehicle heading for authentic slide momentum
+      this.velocityHeading = THREE.MathUtils.lerp(this.velocityHeading, this.rotation.y, delta * 3.6);
+    } else {
+      this.velocityHeading = THREE.MathUtils.lerp(this.velocityHeading, this.rotation.y, delta * 14);
+    }
+
+    const driftBlend = this.isDrifting ? 0.35 : 0.0;
+    const moveHeading = THREE.MathUtils.lerp(this.velocityHeading, this.rotation.y, driftBlend);
+    const moveVector = new THREE.Vector3(Math.sin(moveHeading), 0, Math.cos(moveHeading));
     const velocityMagnitude = (this.speed / 3.6) * delta;
-    this.position.addScaledVector(forward, velocityMagnitude);
+    this.position.addScaledVector(moveVector, velocityMagnitude);
 
     this.mesh.position.copy(this.position);
     this.mesh.rotation.y = this.rotation.y;
@@ -1099,8 +1142,8 @@ class Car {
     });
 
     // Drift Sparks Effect
-    if (this.isDrifting && Math.abs(this.speed) > 60) {
-      this.emitCrashSparks(this.position.clone().add(new THREE.Vector3(0, 0.1, -1.2)));
+    if (this.isDrifting && Math.abs(this.speed) > 35) {
+      this.emitCrashSparks(this.position.clone().add(new THREE.Vector3(0, 0.1, -1.2).applyEuler(this.rotation)));
     }
 
     this.emitTireSmoke(delta);

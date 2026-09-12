@@ -115,6 +115,7 @@ class RacingTrack {
     }
 
     this.trackCurve = new THREE.CatmullRomCurve3(this.waypoints, true, 'catmullrom', 0.15);
+    this.precomputeTrackPoints();
     this.buildRoadMesh();
     this.buildCheckpoints();
     this.buildStartFinishGantry();
@@ -122,6 +123,33 @@ class RacingTrack {
     this.buildStuntRamps();
     this.buildNitroPickups();
     this.buildEnvironment();
+  }
+
+  precomputeTrackPoints() {
+    this.sampledTrackPoints = [];
+    if (!this.trackCurve) return;
+    const count = 240;
+    for (let i = 0; i < count; i++) {
+      this.sampledTrackPoints.push(this.trackCurve.getPointAt(i / count));
+    }
+  }
+
+  isNearTrack(x, z, clearance = 35) {
+    if (!this.sampledTrackPoints || this.sampledTrackPoints.length === 0) {
+      this.precomputeTrackPoints();
+    }
+    if (!this.sampledTrackPoints || this.sampledTrackPoints.length === 0) return false;
+    const safeDist = (this.trackWidth / 2) + clearance;
+    const safeDistSq = safeDist * safeDist;
+    for (let i = 0; i < this.sampledTrackPoints.length; i++) {
+      const p = this.sampledTrackPoints[i];
+      const dx = p.x - x;
+      const dz = p.z - z;
+      if (dx * dx + dz * dz < safeDistSq) {
+        return true;
+      }
+    }
+    return false;
   }
 
   clearTrack() {
@@ -442,7 +470,19 @@ class RacingTrack {
       const foliageMat = new THREE.MeshStandardMaterial({ color: 0x1b5e20, roughness: 0.7 });
       const foliageMatLight = new THREE.MeshStandardMaterial({ color: 0x2e7d32, roughness: 0.7 });
 
-      for (let i = 0; i < 90; i++) {
+      let placedTrees = 0;
+      let attempts = 0;
+      while (placedTrees < 80 && attempts < 400) {
+        attempts++;
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 70 + Math.random() * 290;
+        const tx = Math.sin(angle) * dist;
+        const tz = Math.cos(angle) * dist;
+
+        // Strictly verify tree is well clear of the racetrack surface
+        if (this.isNearTrack(tx, tz, 22)) continue;
+
+        placedTrees++;
         const treeGroup = new THREE.Group();
         const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 1.2, 10, 8), trunkMat);
         trunk.position.y = 5;
@@ -454,10 +494,7 @@ class RacingTrack {
         canopy2.position.y = 13.5;
 
         treeGroup.add(trunk, canopy1, canopy2);
-
-        const angle = (i / 90) * Math.PI * 2 + (Math.random() * 0.1);
-        const dist = 160 + Math.random() * 260;
-        treeGroup.position.set(Math.sin(angle) * dist, 0, Math.cos(angle) * dist);
+        treeGroup.position.set(tx, 0, tz);
         const scale = 0.8 + Math.random() * 0.8;
         treeGroup.scale.set(scale, scale, scale);
 
@@ -466,36 +503,54 @@ class RacingTrack {
       }
     } else if (this.trackId === 'desert_canyon') {
       const rockMat = new THREE.MeshStandardMaterial({ color: 0x7c3f1d, roughness: 0.9, metalness: 0.1 });
-      for (let i = 0; i < 40; i++) {
+      let placedRocks = 0;
+      let attempts = 0;
+      while (placedRocks < 40 && attempts < 350) {
+        attempts++;
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 75 + Math.random() * 280;
+        const rx = Math.sin(angle) * dist;
+        const rz = Math.cos(angle) * dist;
+
+        // Strictly verify rock is well clear of track
+        if (this.isNearTrack(rx, rz, 28)) continue;
+
+        placedRocks++;
         const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(15 + Math.random() * 25, 1), rockMat);
-        const angle = (i / 40) * Math.PI * 2;
-        const dist = 180 + Math.random() * 200;
-        rock.position.set(Math.sin(angle) * dist, 10, Math.cos(angle) * dist);
+        rock.position.set(rx, 10, rz);
         rock.scale.set(1 + Math.random(), 2 + Math.random() * 2, 1 + Math.random());
         this.scene.add(rock);
         this.environmentMeshes.push(rock);
       }
     } else {
-      // Modern Downtown & Cyber City Skyscrapers
+      // Modern Downtown & Cyber City Skyscrapers (Guaranteed 0% track overlap)
       const buildingColors = this.trackId === 'city_center' 
         ? [0x1e293b, 0x334155, 0x475569, 0x0f172a] 
         : [0x0b101d, 0x111626, 0x0f172a];
       const neonAccentColors = [0x00e5ff, 0xff2a5f, 0x8b5cf6, 0x00e676, 0xffea00];
 
-      for (let i = 0; i < 70; i++) {
-        const angle = (i / 70) * Math.PI * 2;
-        const distance = 200 + Math.random() * 280;
+      let placedBuildings = 0;
+      let attempts = 0;
+      while (placedBuildings < 65 && attempts < 450) {
+        attempts++;
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 80 + Math.random() * 320;
         const bx = Math.sin(angle) * distance;
         const bz = Math.cos(angle) * distance;
-        const bHeight = 45 + Math.random() * 150;
+        const bWidth = 22 + Math.random() * 28;
 
+        // Strictly verify building footprint + safety margin is completely off the road
+        if (this.isNearTrack(bx, bz, bWidth / 2 + 25)) continue;
+
+        placedBuildings++;
+        const bHeight = 45 + Math.random() * 150;
         const buildingGroup = new THREE.Group();
-        const bMat = new THREE.MeshStandardMaterial({ color: buildingColors[i % buildingColors.length], metalness: 0.8, roughness: 0.25 });
-        const bMesh = new THREE.Mesh(new THREE.BoxGeometry(25 + Math.random() * 30, bHeight, 25 + Math.random() * 30), bMat);
+        const bMat = new THREE.MeshStandardMaterial({ color: buildingColors[placedBuildings % buildingColors.length], metalness: 0.8, roughness: 0.25 });
+        const bMesh = new THREE.Mesh(new THREE.BoxGeometry(bWidth, bHeight, bWidth), bMat);
         bMesh.position.y = bHeight / 2;
         buildingGroup.add(bMesh);
 
-        const spireMat = new THREE.MeshBasicMaterial({ color: neonAccentColors[i % neonAccentColors.length] });
+        const spireMat = new THREE.MeshBasicMaterial({ color: neonAccentColors[placedBuildings % neonAccentColors.length] });
         const spire = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 1.2, 20, 6), spireMat);
         spire.position.set(0, bHeight + 10, 0);
         buildingGroup.add(spire);
@@ -507,84 +562,14 @@ class RacingTrack {
     }
   }
 
-  buildBranchingRoutes() {
-    this.branchMeshes = [];
-    if (this.waypoints.length < 10) return;
-
-    // 1. High-Altitude Skybridge Shortcut Route (Cuts across waypoints 3 -> 8)
-    const pStart = this.waypoints[3];
-    const pEnd = this.waypoints[7];
-    const midPoint = new THREE.Vector3().addVectors(pStart, pEnd).multiplyScalar(0.5);
-    midPoint.y = 8.5; // Elevated high in the sky
-
-    const bridgePoints = [
-      new THREE.Vector3(pStart.x, 2.0, pStart.z),
-      new THREE.Vector3(pStart.x * 0.7 + pEnd.x * 0.3, 7.5, pStart.z * 0.7 + pEnd.z * 0.3),
-      midPoint,
-      new THREE.Vector3(pStart.x * 0.3 + pEnd.x * 0.7, 7.0, pStart.z * 0.3 + pEnd.z * 0.7),
-      new THREE.Vector3(pEnd.x, 1.5, pEnd.z)
-    ];
-
-    const bridgeCurve = new THREE.CatmullRomCurve3(bridgePoints, false);
-    const bridgeGeo = new THREE.TubeGeometry(bridgeCurve, 40, 7.0, 8, false);
-    const bridgeMat = new THREE.MeshStandardMaterial({
-      color: 0x0c101d,
-      metalness: 0.92,
-      roughness: 0.2
-    });
-    const bridgeMesh = new THREE.Mesh(bridgeGeo, bridgeMat);
-    bridgeMesh.scale.set(1, 0.08, 1);
-    this.scene.add(bridgeMesh);
-    this.environmentMeshes.push(bridgeMesh);
-
-    // Glowing Neon Rails along Skybridge
-    const railMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff });
-    const railGeo = new THREE.TubeGeometry(bridgeCurve, 40, 0.25, 6, false);
-    const railMeshL = new THREE.Mesh(railGeo, railMat);
-    railMeshL.position.x -= 4.0;
-    railMeshL.position.y += 0.6;
-    const railMeshR = new THREE.Mesh(railGeo, railMat);
-    railMeshR.position.x += 4.0;
-    railMeshR.position.y += 0.6;
-    this.scene.add(railMeshL, railMeshR);
-    this.environmentMeshes.push(railMeshL, railMeshR);
-
-    // Support Concrete Pillars
-    const pillarMat = new THREE.MeshStandardMaterial({ color: 0x1f293d, metalness: 0.8, roughness: 0.3 });
-    [0.25, 0.5, 0.75].forEach(t => {
-      const pt = bridgeCurve.getPointAt(t);
-      const pillar = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.6, pt.y, 12), pillarMat);
-      pillar.position.set(pt.x, pt.y / 2, pt.z);
-      this.scene.add(pillar);
-      this.environmentMeshes.push(pillar);
-    });
-
-    // Super Shockwave Pickup on Skybridge Apex
-    const shockwaveGeo = new THREE.CylinderGeometry(0.6, 0.6, 1.8, 16);
-    const shockwaveMat = new THREE.MeshStandardMaterial({
-      color: 0xd946ef,
-      emissive: 0xd946ef,
-      emissiveIntensity: 0.9,
-      metalness: 0.95
-    });
-    const shockwavePickup = new THREE.Mesh(shockwaveGeo, shockwaveMat);
-    shockwavePickup.position.set(midPoint.x, midPoint.y + 1.2, midPoint.z);
-    this.scene.add(shockwavePickup);
-    this.nitroPickups.push({
-      mesh: shockwavePickup,
-      type: 'shockwave_nitro',
-      active: true,
-      baseY: midPoint.y + 1.2
-    });
-  }
-
   buildStuntRamps() {
+    // Offset all stunt ramps to outer shoulders so main road & drift racing line is 100% unobstructed
     const rampIndices = [
-      { wpIdx: 2, type: 'barrel_roll', offset: -4.5, angleOffset: 0.25 },
-      { wpIdx: 3, type: 'super_jump', offset: 0.0, angleOffset: 0.0 }, // Launch to Skybridge
-      { wpIdx: 6, type: 'flat_spin', offset: 4.8, angleOffset: -0.2 },
-      { wpIdx: 10, type: 'barrel_roll', offset: -4.0, angleOffset: 0.25 },
-      { wpIdx: 13, type: 'flat_spin', offset: 0.0, angleOffset: 0.0 }
+      { wpIdx: 2, type: 'barrel_roll', offset: -6.5, angleOffset: 0.18 },
+      { wpIdx: 4, type: 'super_jump', offset: 6.5, angleOffset: 0.0 },
+      { wpIdx: 6, type: 'flat_spin', offset: 6.5, angleOffset: -0.15 },
+      { wpIdx: 10, type: 'barrel_roll', offset: -6.5, angleOffset: 0.18 },
+      { wpIdx: 12, type: 'flat_spin', offset: 6.5, angleOffset: 0.0 }
     ];
 
     const rampMat = new THREE.MeshStandardMaterial({
@@ -624,23 +609,24 @@ class RacingTrack {
         const right = new THREE.Vector3().crossVectors(tangent, new THREE.Vector3(0, 1, 0)).normalize();
 
         const rampGroup = new THREE.Group();
-        const rampGeo = new THREE.BoxGeometry(7.2, 2.2, 11.0);
+        // Slender shoulder stunt ramp (4.8m wide instead of blocking entire 24m road)
+        const rampGeo = new THREE.BoxGeometry(4.8, 1.8, 8.5);
         const rampMesh = new THREE.Mesh(rampGeo, rampMat);
-        rampMesh.rotation.x = -0.24;
+        rampMesh.rotation.x = -0.22;
         rampMesh.rotation.z = rData.angleOffset || 0;
-        rampMesh.position.y = 0.8;
+        rampMesh.position.y = 0.7;
         rampGroup.add(rampMesh);
 
         // Glowing Arrow Stripe
-        const arrowMesh = new THREE.Mesh(new THREE.PlaneGeometry(6.8, 10.5), faceMat);
-        arrowMesh.rotation.x = -Math.PI / 2 - 0.24;
+        const arrowMesh = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 8.0), faceMat);
+        arrowMesh.rotation.x = -Math.PI / 2 - 0.22;
         arrowMesh.rotation.z = rData.angleOffset || 0;
-        arrowMesh.position.set(0, 0.9, 0);
+        arrowMesh.position.set(0, 0.8, 0);
         rampGroup.add(arrowMesh);
 
         // Neon Glow Trim
-        const neonTrim = new THREE.Mesh(new THREE.BoxGeometry(7.4, 0.2, 0.2), new THREE.MeshBasicMaterial({ color: 0x00e5ff }));
-        neonTrim.position.set(0, 1.85, -5.0);
+        const neonTrim = new THREE.Mesh(new THREE.BoxGeometry(5.0, 0.2, 0.2), new THREE.MeshBasicMaterial({ color: 0x00e5ff }));
+        neonTrim.position.set(0, 1.5, -4.0);
         rampGroup.add(neonTrim);
 
         const rampPos = new THREE.Vector3().copy(wp).addScaledVector(right, rData.offset);
@@ -651,7 +637,7 @@ class RacingTrack {
         this.stuntRamps.push({
           mesh: rampGroup,
           position: rampPos,
-          radius: 6.0,
+          radius: 4.2,
           stuntType: rData.type
         });
       }
@@ -810,18 +796,36 @@ class RacingTrack {
 
   getDistanceToCenterline(pos) {
     if (!this.trackCurve) return 0;
+    const closest = this.getClosestCenterlinePoint(pos);
+    return closest.distance;
+  }
+
+  getClosestCenterlinePoint(pos) {
+    if (!this.trackCurve) {
+      return { point: pos.clone ? pos.clone() : pos, tangent: new THREE.Vector3(0, 0, 1), distance: 0 };
+    }
     let minDistSq = Infinity;
-    const numSamples = 120;
+    let bestPoint = null;
+    let bestT = 0;
+    const numSamples = 160;
     for (let i = 0; i < numSamples; i++) {
-      const p = this.trackCurve.getPointAt(i / numSamples);
+      const t = i / numSamples;
+      const p = this.trackCurve.getPointAt(t);
       const dx = pos.x - p.x;
       const dz = pos.z - p.z;
       const dSq = dx * dx + dz * dz;
       if (dSq < minDistSq) {
         minDistSq = dSq;
+        bestPoint = p;
+        bestT = t;
       }
     }
-    return Math.sqrt(minDistSq);
+    const tangent = this.trackCurve.getTangentAt(bestT);
+    return {
+      point: bestPoint ? bestPoint.clone() : pos,
+      tangent: tangent ? tangent.clone() : new THREE.Vector3(0, 0, 1),
+      distance: Math.sqrt(minDistSq)
+    };
   }
 
   update(time) {
