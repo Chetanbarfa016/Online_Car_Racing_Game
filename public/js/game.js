@@ -104,7 +104,7 @@ class Game {
     this.animate();
 
     window.game = this;
-    if (window.bridge && bridge.platform && bridge.platform.sendMessage) {
+    if (window.isPlaygamaReady && window.bridge && bridge.platform && bridge.platform.sendMessage) {
       try {
         bridge.platform.sendMessage('game_ready');
       } catch (e) {}
@@ -412,12 +412,20 @@ class Game {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
   }
 
-  // Pre-Race & Post-Race Ad Hook (Playgama Bridge + Google Ads / Sponsor Simulation)
+  // Pre-Race & Post-Race Ad Hook (Playgama Bridge)
   showInterstitialAd(callback, placement = 'race_finished') {
     if (this.ui) {
       this.ui.showAdOverlay(() => {
         if (callback) callback();
       }, placement);
+    } else {
+      if (callback) callback();
+    }
+  }
+
+  showRewardedAd(placement = 'bonus_nitro', callback) {
+    if (this.ui) {
+      this.ui.showRewardedAd(placement, callback);
     } else {
       if (callback) callback();
     }

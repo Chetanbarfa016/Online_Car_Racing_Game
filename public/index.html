@@ -16,6 +16,18 @@
   <script src="./js/socket.io.min.js"></script>
 </head>
 <body>
+  <!-- PLAYGAMA OFFICIAL QA AD TESTING BAR (Direct 1-Click Ad Trigger for Tests & Verification) -->
+  <div id="playgama-qa-bar" class="playgama-qa-bar">
+    <div class="qa-badge">PLAYGAMA ADS QA:</div>
+    <button id="qa-btn-interstitial" class="qa-btn qa-btn-interstitial" title="Trigger Playgama Interstitial Ad (Shortcut: I)">
+      🎬 [TEST INTERSTITIAL]
+    </button>
+    <button id="qa-btn-rewarded-nitro" class="qa-btn qa-btn-rewarded" title="Trigger Playgama Rewarded Ad (Shortcut: R)">
+      🎁 [TEST REWARDED AD]
+    </button>
+    <span id="qa-status-pill" class="qa-status-pill">SDK: Initializing...</span>
+  </div>
+
   <!-- 3D WebGL Canvas Container -->
   <div id="game-container"></div>
 
@@ -408,28 +420,14 @@
     </div>
   </div>
 
-  <!-- INTERSTITIAL AD OVERLAY (Playgama & Google Ads Monetization) -->
-  <div id="ad-overlay" class="overlay-center" style="display: none;">
-    <div class="ad-card glass-card">
-      <div class="ad-badge-row">
-        <span class="ad-tag">💰 SPONSORED ADVERTISEMENT</span>
-        <span id="ad-countdown" class="ad-timer">Ad closes in 4s</span>
-      </div>
-      <div class="ad-media-container" id="ad-media-slot">
-        <!-- High-Converting Dynamic Gaming Sponsor Banner -->
-        <div class="ad-sponsor-banner" id="ad-sponsor-box">
-          <div class="ad-sponsor-glow"></div>
-          <div class="ad-sponsor-content">
-            <span class="ad-brand-icon">🏎️⚡</span>
-            <h3 id="ad-brand-title">TURBO RACER PRO: NITRO PASS</h3>
-            <p id="ad-brand-desc">Unlock 50+ Custom Supercars, Rare Paint Decals & Maximum Boost!</p>
-            <a href="https://playgama.com" target="_blank" rel="noopener noreferrer" class="btn btn-pill btn-ad-cta" id="ad-cta-link">🚀 PLAY / INSTALL NOW</a>
-          </div>
-        </div>
-      </div>
-      <div class="ad-footer-row">
-        <button id="btn-skip-ad" class="btn btn-pill btn-skip" style="display: none;">SKIP AD ⏭️</button>
-      </div>
+  <!-- OFFICIAL PLAYGAMA AD LOADING OVERLAY (Clean, Compliant, No 3rd-Party Trackers/Sensitive Ads) -->
+  <div id="ad-overlay" class="overlay-center" style="display: none; z-index: 99999;">
+    <div class="ad-card glass-card" style="text-align: center; padding: 28px 36px; max-width: 440px; border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: 20px;">
+      <div class="ad-spinner" style="font-size: 2.6rem; margin-bottom: 12px; animation: spin 1.5s linear infinite; display: inline-block;">⏳</div>
+      <h3 id="ad-brand-title" style="font-family: 'Orbitron', sans-serif; font-size: 1.3rem; font-weight: 800; color: #38bdf8; margin-bottom: 8px; letter-spacing: 1px;">ADVERTISEMENT [AD]</h3>
+      <p id="ad-brand-desc" style="font-size: 0.95rem; color: #94a3b8; margin-bottom: 16px;">Ad playback in progress...</p>
+      <div id="ad-countdown" class="ad-timer" style="font-family: 'Orbitron', sans-serif; font-size: 1.1rem; font-weight: 700; color: #f59e0b; margin-bottom: 18px;">Closing shortly...</div>
+      <button id="btn-skip-ad" class="btn btn-hero" style="display: none; width: 100%;">CONTINUE TO GAME ⏭️</button>
     </div>
   </div>
 
@@ -456,27 +454,115 @@
   <script src="./js/ui.js"></script>
   <script src="./js/game.js"></script>
 
-  <!-- Playgama Bridge SDK Initialization & Lifecycle Notification -->
+  <!-- Playgama Bridge SDK Initialization, Lifecycle Notification & Global QA Test Hooks -->
   <script>
-    window.addEventListener('DOMContentLoaded', () => {
-      if (window.bridge) {
-        bridge.initialize()
-          .then(() => {
-            console.log('[Playgama] Bridge initialized successfully');
-            if (bridge.platform && bridge.platform.sendMessage) {
-              bridge.platform.sendMessage('game_ready');
-            }
-            if (window.game && window.game.ui) {
-              window.game.ui.updateRewardedAdSupportUI();
-            }
-          })
-          .catch((err) => {
-            console.warn('[Playgama] Bridge initialization info:', err);
-            if (window.game && window.game.ui) {
-              window.game.ui.updateRewardedAdSupportUI();
-            }
-          });
+    window.isPlaygamaReady = false;
+    window.playgamaInitPromise = (async () => {
+      if (typeof bridge !== 'undefined') {
+        try {
+          await bridge.initialize();
+          window.isPlaygamaReady = true;
+          console.log('[Playgama] Bridge initialized successfully! Platform:', bridge.platform.id);
+          
+          if (bridge.platform && typeof bridge.platform.sendMessage === 'function') {
+            bridge.platform.sendMessage('game_ready');
+            console.log('[Playgama] Sent platform message: game_ready');
+          }
+
+          const statusEl = document.getElementById('qa-status-pill');
+          if (statusEl) {
+            statusEl.innerText = 'Platform: ' + bridge.platform.id + ' ✅';
+            statusEl.style.color = '#10b981';
+          }
+
+          if (window.game && window.game.ui) {
+            window.game.ui.updateRewardedAdSupportUI();
+          }
+          return true;
+        } catch (err) {
+          console.warn('[Playgama] Bridge initialize note:', err);
+          window.isPlaygamaReady = true;
+          return false;
+        }
       }
+      return false;
+    })();
+
+    // Global 1-Click Trigger for Interstitial Ad
+    window.showPlaygamaInterstitialAd = async function(placement = 'race_start') {
+      const statusEl = document.getElementById('qa-status-pill');
+      if (statusEl) statusEl.innerText = 'Interstitial: Calling...';
+      console.log('[Playgama QA] Triggering Interstitial Ad placement=' + placement);
+
+      await window.playgamaInitPromise;
+      if (window.game && window.game.ui) {
+        window.game.ui.showAdOverlay(() => {
+          console.log('[Playgama QA] Interstitial finished callback executed');
+          if (statusEl) statusEl.innerText = 'Interstitial: Finished ✅';
+        }, placement);
+      } else if (typeof bridge !== 'undefined' && bridge.advertisement) {
+        bridge.advertisement.showInterstitial(placement);
+      }
+    };
+
+    // Global 1-Click Trigger for Rewarded Ad
+    window.showPlaygamaRewardedAd = async function(placement = 'bonus_nitro') {
+      const statusEl = document.getElementById('qa-status-pill');
+      if (statusEl) statusEl.innerText = 'Rewarded: Calling...';
+      console.log('[Playgama QA] Triggering Rewarded Ad placement=' + placement);
+
+      await window.playgamaInitPromise;
+      if (window.game && window.game.ui) {
+        window.game.ui.showRewardedAd(placement, () => {
+          console.log('[Playgama QA] Rewarded success callback executed!');
+          if (statusEl) statusEl.innerText = 'Rewarded: Granted 🎁';
+        });
+      } else if (typeof bridge !== 'undefined' && bridge.advertisement) {
+        bridge.advertisement.showRewarded(placement);
+      }
+    };
+
+    // Wire up QA bar buttons
+    window.addEventListener('DOMContentLoaded', () => {
+      const btnInt = document.getElementById('qa-btn-interstitial');
+      if (btnInt) {
+        btnInt.addEventListener('click', (e) => {
+          e.preventDefault();
+          window.showPlaygamaInterstitialAd('race_start');
+        });
+      }
+
+      const btnRew = document.getElementById('qa-btn-rewarded-nitro');
+      if (btnRew) {
+        btnRew.addEventListener('click', (e) => {
+          e.preventDefault();
+          window.showPlaygamaRewardedAd('bonus_nitro');
+        });
+      }
+
+      // Keyboard shortcuts for rapid testing: Key 'I' for Interstitial, Key 'R' for Rewarded
+      window.addEventListener('keydown', (e) => {
+        if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+        if (e.code === 'KeyI') {
+          console.log('[Playgama QA] Keyboard shortcut "I" pressed -> Interstitial Ad');
+          window.showPlaygamaInterstitialAd('race_start');
+        } else if (e.code === 'KeyR') {
+          console.log('[Playgama QA] Keyboard shortcut "R" pressed -> Rewarded Ad');
+          window.showPlaygamaRewardedAd('bonus_nitro');
+        }
+      });
+
+      // Listen for parent test runner messages
+      window.addEventListener('message', (event) => {
+        const d = event.data;
+        if (!d) return;
+        if (d.action === 'show_interstitial' || d.action === 'test_interstitial' || d.action === 'interstitial') {
+          window.showPlaygamaInterstitialAd('race_start');
+        }
+        if (d.action === 'show_rewarded' || d.action === 'test_rewarded' || d.action === 'reward') {
+          window.showPlaygamaRewardedAd('bonus_nitro');
+        }
+      });
     });
   </script>
 </body>
