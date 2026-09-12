@@ -102,13 +102,20 @@ class Game {
 
     // 10. Start Animation Loop
     this.animate();
+
+    window.game = this;
+    if (window.bridge && bridge.platform && bridge.platform.sendMessage) {
+      try {
+        bridge.platform.sendMessage('game_ready');
+      } catch (e) {}
+    }
   }
 
   initPlatformBridgeListeners() {
     // 1. Playgama Platform Sound & Audio State Listener (interstitial-ads-sound compliance)
     if (window.bridge && bridge.platform) {
       bridge.platform.on(bridge.EVENT_NAME.AUDIO_STATE_CHANGED, (isAudioEnabled) => {
-        console.log('Playgama Audio State:', isAudioEnabled);
+        console.log('[Playgama] Audio State:', isAudioEnabled);
         if (this.localCar && this.localCar.audioCtx) {
           if (!isAudioEnabled) {
             this.localCar.audioCtx.suspend();

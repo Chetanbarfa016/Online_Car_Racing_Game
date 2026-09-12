@@ -288,6 +288,18 @@ class UIController {
       });
     }
 
+    const btnTopNitro = document.getElementById('btn-top-reward-nitro');
+    if (btnTopNitro) {
+      btnTopNitro.addEventListener('click', () => {
+        this.showRewardedAd('bonus_nitro', () => {
+          if (this.game.localCar) {
+            this.game.localCar.nitroAmount = 100;
+          }
+          this.showToast('🚀 REWARDED! +100% NITRO BOOST ACTIVATED FOR RACE! [AD]');
+        });
+      });
+    }
+
     // Check platform rewarded support and update visibility
     this.updateRewardedAdSupportUI();
 
@@ -336,43 +348,56 @@ class UIController {
 
   // Update UI based on platform support for Rewarded Ads
   updateRewardedAdSupportUI() {
-    if (window.bridge && bridge.advertisement && typeof bridge.advertisement.isRewardedSupported !== 'undefined') {
-      const isSupported = bridge.advertisement.isRewardedSupported;
+    if (window.bridge && bridge.advertisement && bridge.advertisement.isRewardedSupported === false) {
       document.querySelectorAll('.btn-reward-ad').forEach(btn => {
-        btn.style.display = isSupported ? 'flex' : 'none';
+        btn.style.display = 'none';
+      });
+    } else {
+      document.querySelectorAll('.btn-reward-ad').forEach(btn => {
+        btn.style.display = 'flex';
       });
     }
   }
 
-  // Playgama Official Rewarded Ad Integration (Strict State Validation)
+  // Playgama Official Rewarded Ad Integration (Strict State Validation for Early Close & Completion Tests)
   showRewardedAd(placement = 'bonus_nitro', onRewardSuccess) {
-    if (window.bridge && bridge.advertisement && bridge.advertisement.isRewardedSupported) {
+    if (window.bridge && bridge.advertisement && typeof bridge.advertisement.showRewarded === 'function') {
       let hasRewarded = false;
 
       // Playgama Rule: Reward player ONLY when state is 'rewarded'
       const onStateChanged = (state) => {
-        console.log('Playgama Rewarded State:', state);
+        console.log('[Playgama] Rewarded State Changed:', state);
         if (state === 'rewarded') {
           hasRewarded = true;
         } else if (state === 'closed') {
-          if (bridge.advertisement.off) {
+          if (bridge.advertisement.off && bridge.EVENT_NAME && bridge.EVENT_NAME.REWARDED_STATE_CHANGED) {
             bridge.advertisement.off(bridge.EVENT_NAME.REWARDED_STATE_CHANGED, onStateChanged);
           }
           if (hasRewarded) {
+            console.log('[Playgama] Rewarded full completion: granting reward');
             if (onRewardSuccess) onRewardSuccess();
           } else {
-            this.showToast('⚠️ Video closed before completion. No reward granted.');
+            console.log('[Playgama] Rewarded early close: NO reward granted');
+            this.showToast('⚠️ Ad closed early. No reward granted.');
           }
         } else if (state === 'failed') {
-          if (bridge.advertisement.off) {
+          if (bridge.advertisement.off && bridge.EVENT_NAME && bridge.EVENT_NAME.REWARDED_STATE_CHANGED) {
             bridge.advertisement.off(bridge.EVENT_NAME.REWARDED_STATE_CHANGED, onStateChanged);
           }
+          console.warn('[Playgama] Rewarded ad failed or unavailable');
           this.showToast('⚠️ Ad is temporarily unavailable.');
         }
       };
 
-      bridge.advertisement.on(bridge.EVENT_NAME.REWARDED_STATE_CHANGED, onStateChanged);
-      bridge.advertisement.showRewarded(placement);
+      if (bridge.advertisement.on && bridge.EVENT_NAME && bridge.EVENT_NAME.REWARDED_STATE_CHANGED) {
+        bridge.advertisement.on(bridge.EVENT_NAME.REWARDED_STATE_CHANGED, onStateChanged);
+      }
+
+      try {
+        bridge.advertisement.showRewarded(placement);
+      } catch (err) {
+        console.error('[Playgama] Error calling showRewarded:', err);
+      }
       return;
     }
 
@@ -452,7 +477,7 @@ class UIController {
       }
 
       try {
-        const adPromise = bridge.advertisement.showInterstitial({ placement: placement });
+        const adPromise = bridge.advertisement.showInterstitial(placement);
         if (adPromise && typeof adPromise.then === 'function') {
           adPromise
             .then(() => {
@@ -529,13 +554,6 @@ class UIController {
 
     adOverlay.style.display = 'flex';
     if (skipBtn) skipBtn.style.display = 'none';
-
-    // Push Google Ads if adsbygoogle is loaded
-    try {
-      if (window.adsbygoogle) {
-        (window.adsbygoogle = window.adsbygoogle || []).push({});
-      }
-    } catch (e) {}
 
     const isPreRace = (placement === 'race_start');
     let timeLeft = 4;
@@ -782,3 +800,25 @@ class UIController {
     }, 3000);
   }
 }
+
+// Global Automated Test Hooks for Playgama Moderation QA
+window.showPlaygamaRewardedAd = (placement = 'bonus_nitro') => {
+  if (window.game && window.game.ui) {
+    window.game.ui.showRewardedAd(placement, () => {
+      console.log('[Playgama QA] Rewarded callback triggered');
+    });
+  } else if (window.bridge && bridge.advertisement && bridge.advertisement.showRewarded) {
+    bridge.advertisement.showRewarded(placement);
+  }
+};
+
+window.showPlaygamaInterstitialAd = (placement = 'race_start') => {
+  if (window.game && window.game.ui) {
+    window.game.ui.showAdOverlay(() => {
+      console.log('[Playgama QA] Interstitial callback triggered');
+    }, placement);
+  } else if (window.bridge && bridge.advertisement && bridge.advertisement.showInterstitial) {
+    bridge.advertisement.showInterstitial(placement);
+  }
+};
+

@@ -1,10 +1,9 @@
 {
   "advertisement": {
-    "minimumDelayBetweenInterstitial": 60,
+    "minimumDelayBetweenInterstitial": 30,
     "initialInterstitialDelay": 0,
     "interstitial": {
       "disable": false,
-      "autoShow": ["visibility_state_visible"],
       "preloadOnStart": "race_start",
       "placementFallback": "race_start",
       "placements": [

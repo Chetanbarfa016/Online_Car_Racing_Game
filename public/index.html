@@ -10,9 +10,7 @@
   <link rel="stylesheet" href="./css/style.css" />
   <!-- Three.js Library -->
   <script src="./js/three.min.js"></script>
-  <!-- Google AdSense / H5 Ads Integration -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-0000000000000000" crossorigin="anonymous"></script>
-  <!-- Playgama Bridge SDK Official -->
+  <!-- Playgama Bridge SDK Official (Monetization & Platform) -->
   <script src="https://bridge.playgama.com/v2/stable/playgama-bridge.js"></script>
   <!-- Socket.io Client -->
   <script src="./js/socket.io.min.js"></script>
@@ -29,9 +27,15 @@
         <span class="logo-badge">PRO</span>
         <h1 class="logo-title">TURBO<span class="accent-pink">RACER</span> <span class="logo-sub">3D</span></h1>
       </div>
-      <div class="profile-chip glass-pill">
-        <span class="avatar-icon">🏎️</span>
-        <input type="text" id="player-name-input" maxlength="12" value="Racer_1" title="Click to edit name" />
+      <div class="header-right-actions">
+        <!-- Prominent Playgama Rewarded Ad Button with Official AD Attribution -->
+        <button id="btn-top-reward-nitro" class="btn btn-reward-ad btn-reward-header">
+          <span class="ad-tag-pill">AD</span> ⚡ WATCH AD: +100% NITRO
+        </button>
+        <div class="profile-chip glass-pill">
+          <span class="avatar-icon">🏎️</span>
+          <input type="text" id="player-name-input" maxlength="12" value="Racer_1" title="Click to edit name" />
+        </div>
       </div>
     </header>
 
@@ -409,16 +413,9 @@
     <div class="ad-card glass-card">
       <div class="ad-badge-row">
         <span class="ad-tag">💰 SPONSORED ADVERTISEMENT</span>
-        <span id="ad-countdown" class="ad-timer">Ad closes in 5s</span>
+        <span id="ad-countdown" class="ad-timer">Ad closes in 4s</span>
       </div>
       <div class="ad-media-container" id="ad-media-slot">
-        <!-- Google AdSense / H5 Ads Container -->
-        <ins class="adsbygoogle"
-             style="display:block; width:100%; min-height:160px;"
-             data-ad-client="ca-pub-0000000000000000"
-             data-ad-slot="1234567890"
-             data-ad-format="auto"
-             data-full-width-responsive="true"></ins>
         <!-- High-Converting Dynamic Gaming Sponsor Banner -->
         <div class="ad-sponsor-banner" id="ad-sponsor-box">
           <div class="ad-sponsor-glow"></div>
@@ -459,19 +456,25 @@
   <script src="./js/ui.js"></script>
   <script src="./js/game.js"></script>
 
-  <!-- Playgama Bridge SDK Initialization -->
+  <!-- Playgama Bridge SDK Initialization & Lifecycle Notification -->
   <script>
     window.addEventListener('DOMContentLoaded', () => {
       if (window.bridge) {
         bridge.initialize()
           .then(() => {
-            console.log('Playgama Bridge initialized successfully');
+            console.log('[Playgama] Bridge initialized successfully');
             if (bridge.platform && bridge.platform.sendMessage) {
               bridge.platform.sendMessage('game_ready');
             }
+            if (window.game && window.game.ui) {
+              window.game.ui.updateRewardedAdSupportUI();
+            }
           })
           .catch((err) => {
-            console.log('Playgama Bridge initialization info:', err);
+            console.warn('[Playgama] Bridge initialization info:', err);
+            if (window.game && window.game.ui) {
+              window.game.ui.updateRewardedAdSupportUI();
+            }
           });
       }
     });
