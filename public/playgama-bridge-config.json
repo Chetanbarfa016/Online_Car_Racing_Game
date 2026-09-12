@@ -5,9 +5,10 @@
     "interstitial": {
       "disable": false,
       "autoShow": ["visibility_state_visible"],
-      "preloadOnStart": "race_finished",
-      "placementFallback": "race_finished",
+      "preloadOnStart": "race_start",
+      "placementFallback": "race_start",
       "placements": [
+        { "id": "race_start" },
         { "id": "race_finished" }
       ]
     },

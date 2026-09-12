@@ -406,19 +406,19 @@ class Game {
   }
 
   // Pre-Race & Post-Race Ad Hook (Playgama Bridge + Google Ads / Sponsor Simulation)
-  showInterstitialAd(callback) {
+  showInterstitialAd(callback, placement = 'race_finished') {
     if (this.ui) {
       this.ui.showAdOverlay(() => {
         if (callback) callback();
-      });
+      }, placement);
     } else {
       if (callback) callback();
     }
   }
 
   // Start Single Player Quick Match vs AI Bots
-  startSinglePlayerGame() {
-    this.showInterstitialAd(() => {
+  startSinglePlayerGame(skipAd = false) {
+    const launch = () => {
       this.clearAIBots();
       this.localCar.repair();
       this.localCar.position.set(-3.5, 0.46, -10);
@@ -438,7 +438,13 @@ class Game {
       };
 
       this.startCountdown(3, mockRoomData);
-    });
+    };
+
+    if (skipAd) {
+      launch();
+    } else {
+      this.showInterstitialAd(launch, 'race_start');
+    }
   }
 
   spawnAIBots() {
@@ -689,7 +695,7 @@ class Game {
           setTimeout(() => {
             this.showInterstitialAd(() => {
               this.showPodiumResults();
-            });
+            }, 'race_finished');
           }, 1200);
         }
       }

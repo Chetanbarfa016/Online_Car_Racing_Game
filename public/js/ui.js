@@ -182,37 +182,58 @@ class UIController {
     });
 
     // 7. Quick Match Button (Single Player vs AI Bots or Quick Match)
-    document.getElementById('btn-quick-match').addEventListener('click', () => {
-      const name = document.getElementById('player-name-input').value.trim() || 'Racer';
-      // If server is connected, quick match online, or launch Single Player AI race!
-      if (this.game.network && this.game.network.isConnected) {
-        this.game.network.quickMatch(name, this.selectedColor, this.selectedModel);
-      } else {
-        this.game.startSinglePlayerGame();
-      }
-    });
+    const btnQuickMatch = document.getElementById('btn-quick-match');
+    if (btnQuickMatch) {
+      btnQuickMatch.addEventListener('click', () => {
+        const name = document.getElementById('player-name-input').value.trim() || 'Racer';
+        this.showAdOverlay(() => {
+          // If server is connected, quick match online, or launch Single Player AI race!
+          if (this.game.network && this.game.network.isConnected) {
+            this.game.network.quickMatch(name, this.selectedColor, this.selectedModel);
+          } else {
+            this.game.startSinglePlayerGame(true);
+          }
+        }, 'race_start');
+      });
+    }
 
     // 8. Copy Room Code Button
-    document.getElementById('btn-copy-code').addEventListener('click', () => {
-      const code = document.getElementById('display-room-code').innerText;
-      navigator.clipboard.writeText(code);
-      this.showToast('📋 Room Code ' + code + ' copied to clipboard!');
-    });
+    const btnCopyCode = document.getElementById('btn-copy-code');
+    if (btnCopyCode) {
+      btnCopyCode.addEventListener('click', () => {
+        const code = document.getElementById('display-room-code').innerText;
+        navigator.clipboard.writeText(code);
+        this.showToast('📋 Room Code ' + code + ' copied to clipboard!');
+      });
+    }
 
     // 9. Start Race Button (Host only)
-    document.getElementById('btn-start-race').addEventListener('click', () => {
-      this.game.network.startRace();
-    });
+    const btnStartRace = document.getElementById('btn-start-race');
+    if (btnStartRace) {
+      btnStartRace.addEventListener('click', () => {
+        this.showAdOverlay(() => {
+          this.game.network.startRace();
+        }, 'race_start');
+      });
+    }
 
     // 10. Leave Room Button
-    document.getElementById('btn-leave-room').addEventListener('click', () => {
-      window.location.reload();
-    });
+    const btnLeaveRoom = document.getElementById('btn-leave-room');
+    if (btnLeaveRoom) {
+      btnLeaveRoom.addEventListener('click', () => {
+        window.location.reload();
+      });
+    }
 
     // 11. Back to Lobby from Podium
-    document.getElementById('btn-back-lobby').addEventListener('click', () => {
-      window.location.reload();
-    });
+    const btnBackLobby = document.getElementById('btn-back-lobby');
+    if (btnBackLobby) {
+      btnBackLobby.addEventListener('click', () => {
+        this.showAdOverlay(() => {
+          window.location.reload();
+        }, 'race_finished');
+      });
+    }
 
     // 12. Camera Switch Button
     document.getElementById('btn-cam-switch').addEventListener('click', () => {
@@ -406,24 +427,64 @@ class UIController {
   }
 
   // Interstitial Ad Management (Playgama Bridge + Google Ads / Sponsor Simulation)
-  showAdOverlay(callback) {
+  showAdOverlay(callback, placement = 'race_start') {
     // 1. Check Playgama Bridge Official Ad first
-    if (window.bridge && bridge.advertisement && bridge.advertisement.showInterstitial) {
-      bridge.advertisement.showInterstitial()
-        .then(() => {
+    if (window.bridge && bridge.advertisement && typeof bridge.advertisement.showInterstitial === 'function') {
+      let completed = false;
+      const finish = () => {
+        if (!completed) {
+          completed = true;
+          if (bridge.advertisement.off && bridge.EVENT_NAME && bridge.EVENT_NAME.INTERSTITIAL_STATE_CHANGED) {
+            bridge.advertisement.off(bridge.EVENT_NAME.INTERSTITIAL_STATE_CHANGED, onStateChanged);
+          }
           if (callback) callback();
-        })
-        .catch(() => {
-          this.showCustomAdModal(callback);
-        });
+        }
+      };
+
+      const onStateChanged = (state) => {
+        if (state === 'closed' || state === 'failed') {
+          finish();
+        }
+      };
+
+      if (bridge.advertisement.on && bridge.EVENT_NAME && bridge.EVENT_NAME.INTERSTITIAL_STATE_CHANGED) {
+        bridge.advertisement.on(bridge.EVENT_NAME.INTERSTITIAL_STATE_CHANGED, onStateChanged);
+      }
+
+      try {
+        const adPromise = bridge.advertisement.showInterstitial({ placement: placement });
+        if (adPromise && typeof adPromise.then === 'function') {
+          adPromise
+            .then(() => {
+              finish();
+            })
+            .catch(() => {
+              if (!completed) {
+                if (bridge.advertisement.off && bridge.EVENT_NAME && bridge.EVENT_NAME.INTERSTITIAL_STATE_CHANGED) {
+                  bridge.advertisement.off(bridge.EVENT_NAME.INTERSTITIAL_STATE_CHANGED, onStateChanged);
+                }
+                this.showCustomAdModal(callback, placement);
+              }
+            });
+        }
+      } catch (e) {
+        this.showCustomAdModal(callback, placement);
+      }
+
+      // Safety timeout: Ensure game continues even if bridge freezes
+      setTimeout(() => {
+        if (!completed) {
+          finish();
+        }
+      }, 12000);
       return;
     }
 
     // 2. Otherwise Show High-Converting Monetization Ad Modal
-    this.showCustomAdModal(callback);
+    this.showCustomAdModal(callback, placement);
   }
 
-  showCustomAdModal(callback) {
+  showCustomAdModal(callback, placement = 'race_start') {
     const adOverlay = document.getElementById('ad-overlay');
     const timerEl = document.getElementById('ad-countdown');
     const skipBtn = document.getElementById('btn-skip-ad');
@@ -476,16 +537,18 @@ class UIController {
       }
     } catch (e) {}
 
-    let timeLeft = 5;
-    if (timerEl) timerEl.innerText = 'Ad closes in ' + timeLeft + 's';
+    const isPreRace = (placement === 'race_start');
+    let timeLeft = 4;
+    if (timerEl) timerEl.innerText = isPreRace ? 'Race starting in ' + timeLeft + 's' : 'Ad closes in ' + timeLeft + 's';
 
     const interval = setInterval(() => {
       timeLeft--;
       if (timeLeft <= 0) {
         clearInterval(interval);
-        if (timerEl) timerEl.innerText = 'Reward / Continue Ready';
+        if (timerEl) timerEl.innerText = isPreRace ? '🚦 READY TO RACE!' : 'Ready to Continue';
         if (skipBtn) {
           skipBtn.style.display = 'inline-block';
+          skipBtn.innerText = isPreRace ? 'START RACE 🏎️' : 'CONTINUE ⏭️';
           skipBtn.onclick = () => {
             adOverlay.style.display = 'none';
             skipBtn.onclick = null;
@@ -493,7 +556,7 @@ class UIController {
           };
         }
       } else {
-        if (timerEl) timerEl.innerText = 'Ad closes in ' + timeLeft + 's';
+        if (timerEl) timerEl.innerText = isPreRace ? 'Race starting in ' + timeLeft + 's' : 'Ad closes in ' + timeLeft + 's';
       }
     }, 1000);
   }
