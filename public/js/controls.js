@@ -65,6 +65,16 @@ class InputController {
         case 'Space':
           this.state.drift = true;
           break;
+        case 'KeyC':
+          if (window.game && typeof window.game.toggleCameraView === 'function') {
+            window.game.toggleCameraView();
+          }
+          break;
+        case 'KeyR':
+          if (window.game && window.game.gameState === 'RACING' && typeof window.game.resetLocalCar === 'function') {
+            window.game.resetLocalCar();
+          }
+          break;
       }
     });
 
