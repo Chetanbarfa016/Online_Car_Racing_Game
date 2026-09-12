@@ -410,11 +410,16 @@ class UIController {
         } else if (state === 'opened') {
           pauseGameAndAudio();
           if (statusEl) statusEl.innerText = 'Rewarded: Opened 📺';
+          this.displayAdOverlayUI('rewarded', () => {
+            if (hasRewarded && onRewardSuccess) onRewardSuccess();
+          });
         } else if (state === 'rewarded') {
           // Playgama Rule: Player is eligible for reward ONLY when state is 'rewarded'
           hasRewarded = true;
           if (statusEl) statusEl.innerText = 'Rewarded: Unlocked 🎁';
+          this.markRewardUnlocked();
         } else if (state === 'closed') {
+          this.hideAdOverlayUI();
           resumeGameAndAudio();
           if (bridge.advertisement.off && bridge.EVENT_NAME && bridge.EVENT_NAME.REWARDED_STATE_CHANGED) {
             bridge.advertisement.off(bridge.EVENT_NAME.REWARDED_STATE_CHANGED, onStateChanged);
@@ -442,16 +447,8 @@ class UIController {
           if (bridge.advertisement.off && bridge.EVENT_NAME && bridge.EVENT_NAME.REWARDED_STATE_CHANGED) {
             bridge.advertisement.off(bridge.EVENT_NAME.REWARDED_STATE_CHANGED, onStateChanged);
           }
-          console.warn('[Playgama] Rewarded ad state failed');
-
-          // If running in local mock environment, trigger local visual simulator
-          if (window.bridge.platform && window.bridge.platform.id === 'mock') {
-            console.log('[Playgama] Mock platform: showing interactive visual simulator');
-            this.showCustomRewardedSimulator(onRewardSuccess);
-          } else {
-            if (statusEl) statusEl.innerText = 'Rewarded: Unavailable';
-            this.showToast('⚠️ Ad is temporarily unavailable.');
-          }
+          console.warn('[Playgama] Rewarded ad state failed: Showing visual simulator');
+          this.displayAdOverlayUI('rewarded', onRewardSuccess);
         }
       };
 
@@ -464,63 +461,17 @@ class UIController {
       } catch (err) {
         console.error('[Playgama] Error calling showRewarded:', err);
         resumeGameAndAudio();
-        this.showCustomRewardedSimulator(onRewardSuccess);
+        this.displayAdOverlayUI('rewarded', onRewardSuccess);
       }
       return;
     }
 
-    // Fallback: Local / Standalone Rewarded Ad Simulation (Supports Early Close & Completion Testing)
-    this.showCustomRewardedSimulator(onRewardSuccess);
+    // Fallback: Local / Standalone Rewarded Ad Simulation
+    this.displayAdOverlayUI('rewarded', onRewardSuccess);
   }
 
   showCustomRewardedSimulator(onRewardSuccess) {
-    const adOverlay = document.getElementById('ad-overlay');
-    const timerEl = document.getElementById('ad-countdown');
-    const skipBtn = document.getElementById('btn-skip-ad');
-    const brandTitle = document.getElementById('ad-brand-title');
-    const brandDesc = document.getElementById('ad-brand-desc');
-
-    if (!adOverlay) {
-      if (onRewardSuccess) onRewardSuccess();
-      return;
-    }
-
-    if (brandTitle) brandTitle.innerText = 'REWARDED VIDEO AD [AD]';
-    if (brandDesc) brandDesc.innerText = 'Simulating rewarded video... Watch full ad to earn reward.';
-
-    adOverlay.style.display = 'flex';
-    if (skipBtn) {
-      skipBtn.style.display = 'inline-block';
-      skipBtn.innerText = 'CLOSE EARLY (NO REWARD) ❌';
-      skipBtn.onclick = () => {
-        clearInterval(interval);
-        adOverlay.style.display = 'none';
-        skipBtn.onclick = null;
-        this.showToast('⚠️ Ad closed early. No reward granted.');
-      };
-    }
-
-    let timeLeft = 4;
-    if (timerEl) timerEl.innerText = 'Reward unlocking in ' + timeLeft + 's...';
-
-    const interval = setInterval(() => {
-      timeLeft--;
-      if (timeLeft <= 0) {
-        clearInterval(interval);
-        if (timerEl) timerEl.innerText = '✅ Reward Unlocked! Click to Claim';
-        if (skipBtn) {
-          skipBtn.innerText = 'CLAIM REWARD ✅';
-          skipBtn.onclick = () => {
-            adOverlay.style.display = 'none';
-            skipBtn.onclick = null;
-            this.showToast('🎁 Reward Claimed!');
-            if (onRewardSuccess) onRewardSuccess();
-          };
-        }
-      } else {
-        if (timerEl) timerEl.innerText = 'Reward unlocking in ' + timeLeft + 's...';
-      }
-    }, 1000);
+    this.displayAdOverlayUI('rewarded', onRewardSuccess);
   }
 
   // Interstitial Ad Management (Playgama Bridge Compliant)
@@ -552,6 +503,7 @@ class UIController {
       const finish = () => {
         if (!completed) {
           completed = true;
+          this.hideAdOverlayUI();
           resumeGameAndAudio();
           if (bridge.advertisement.off && bridge.EVENT_NAME && bridge.EVENT_NAME.INTERSTITIAL_STATE_CHANGED) {
             bridge.advertisement.off(bridge.EVENT_NAME.INTERSTITIAL_STATE_CHANGED, onStateChanged);
@@ -568,19 +520,14 @@ class UIController {
         } else if (state === 'opened') {
           pauseGameAndAudio();
           if (statusEl) statusEl.innerText = 'Interstitial: Opened 🎬';
+          this.displayAdOverlayUI('interstitial', finish);
         } else if (state === 'closed') {
           finish();
         } else if (state === 'failed') {
           if (bridge.advertisement.off && bridge.EVENT_NAME && bridge.EVENT_NAME.INTERSTITIAL_STATE_CHANGED) {
             bridge.advertisement.off(bridge.EVENT_NAME.INTERSTITIAL_STATE_CHANGED, onStateChanged);
           }
-          // If on local mock platform, show local visual modal
-          if (window.bridge.platform && window.bridge.platform.id === 'mock') {
-            console.log('[Playgama] Mock platform: showing visual interstitial modal');
-            this.showCustomAdModal(callback, placement);
-          } else {
-            finish();
-          }
+          finish();
         }
       };
 
@@ -592,7 +539,7 @@ class UIController {
         bridge.advertisement.showInterstitial(placement);
       } catch (e) {
         console.warn('[Playgama] Error calling showInterstitial:', e);
-        this.showCustomAdModal(callback, placement);
+        this.displayAdOverlayUI('interstitial', callback);
       }
 
       // Safety timeout: Ensure game continues even if bridge freezes
@@ -605,48 +552,134 @@ class UIController {
     }
 
     // Fallback: Local / Standalone Interstitial Ad Modal
-    this.showCustomAdModal(callback, placement);
+    this.displayAdOverlayUI('interstitial', callback);
   }
 
   showCustomAdModal(callback, placement = 'race_start') {
+    this.displayAdOverlayUI('interstitial', callback);
+  }
+
+  displayAdOverlayUI(type = 'interstitial', onComplete) {
     const adOverlay = document.getElementById('ad-overlay');
+    if (!adOverlay) {
+      if (onComplete) onComplete();
+      return;
+    }
+
+    if (this._adInterval) {
+      clearInterval(this._adInterval);
+      this._adInterval = null;
+    }
+
     const timerEl = document.getElementById('ad-countdown');
     const skipBtn = document.getElementById('btn-skip-ad');
     const brandTitle = document.getElementById('ad-brand-title');
     const brandDesc = document.getElementById('ad-brand-desc');
+    const progressFill = document.getElementById('ad-progress-fill');
+    const badgeTag = adOverlay.querySelector('.ad-badge-tag');
 
-    if (!adOverlay) {
-      if (callback) callback();
-      return;
+    const isRewarded = type === 'rewarded';
+    let totalDuration = isRewarded ? 5 : 3;
+    let secondsLeft = totalDuration;
+
+    if (badgeTag) {
+      badgeTag.innerText = isRewarded ? 'REWARDED VIDEO [AD]' : 'SPONSORED [AD]';
     }
 
-    if (brandTitle) brandTitle.innerText = 'INTERSTITIAL ADVERTISEMENT [AD]';
-    if (brandDesc) brandDesc.innerText = 'Loading next race track...';
+    if (brandTitle) {
+      brandTitle.innerText = isRewarded ? '⚡ SUPER TURBO SPEED RACER' : '🏎️ PLAYGAMA ARCADE NETWORK';
+    }
+
+    if (brandDesc) {
+      brandDesc.innerText = isRewarded 
+        ? 'Watch full video to unlock Free Full Nitro Tank & instant vehicle repair!'
+        : 'Next circuit track loading! Powered by Playgama Ultra Fast Cloud Engine.';
+    }
+
+    if (progressFill) progressFill.style.width = '0%';
+    if (timerEl) timerEl.innerText = '0:0' + secondsLeft;
 
     adOverlay.style.display = 'flex';
-    if (skipBtn) skipBtn.style.display = 'none';
 
-    let timeLeft = 2;
-    if (timerEl) timerEl.innerText = 'Continuing in ' + timeLeft + 's...';
-
-    const interval = setInterval(() => {
-      timeLeft--;
-      if (timeLeft <= 0) {
-        clearInterval(interval);
-        if (timerEl) timerEl.innerText = 'Ready!';
-        if (skipBtn) {
-          skipBtn.style.display = 'inline-block';
-          skipBtn.innerText = 'CONTINUE ⏭️';
-          skipBtn.onclick = () => {
-            adOverlay.style.display = 'none';
-            skipBtn.onclick = null;
-            if (callback) callback();
-          };
-        }
+    if (skipBtn) {
+      if (isRewarded) {
+        skipBtn.style.display = 'inline-block';
+        skipBtn.innerText = 'CLOSE EARLY ❌';
+        skipBtn.onclick = () => {
+          this.hideAdOverlayUI();
+          this.showToast('⚠️ Ad closed early. No reward granted.');
+        };
       } else {
-        if (timerEl) timerEl.innerText = 'Continuing in ' + timeLeft + 's...';
+        skipBtn.style.display = 'none';
       }
-    }, 1000);
+    }
+
+    const startTime = performance.now();
+    this._adInterval = setInterval(() => {
+      const elapsed = (performance.now() - startTime) / 1000;
+      const progress = Math.min(100, (elapsed / totalDuration) * 100);
+      if (progressFill) progressFill.style.width = progress + '%';
+
+      const remain = Math.max(0, Math.ceil(totalDuration - elapsed));
+      if (timerEl) timerEl.innerText = '0:0' + remain;
+
+      if (elapsed >= totalDuration) {
+        clearInterval(this._adInterval);
+        this._adInterval = null;
+
+        if (isRewarded) {
+          if (timerEl) timerEl.innerText = '✅ UNLOCKED!';
+          if (skipBtn) {
+            skipBtn.style.display = 'inline-block';
+            skipBtn.innerText = 'CLAIM REWARD 🎁';
+            skipBtn.onclick = () => {
+              this.hideAdOverlayUI();
+              this.showToast('🎁 Reward Claimed!');
+              if (onComplete) onComplete();
+            };
+          }
+        } else {
+          if (timerEl) timerEl.innerText = 'READY!';
+          if (skipBtn) {
+            skipBtn.style.display = 'inline-block';
+            skipBtn.innerText = 'CONTINUE ⏭️';
+            skipBtn.onclick = () => {
+              this.hideAdOverlayUI();
+              if (onComplete) onComplete();
+            };
+          }
+          setTimeout(() => {
+            if (adOverlay.style.display === 'flex') {
+              this.hideAdOverlayUI();
+              if (onComplete) onComplete();
+            }
+          }, 1200);
+        }
+      }
+    }, 100);
+  }
+
+  hideAdOverlayUI() {
+    if (this._adInterval) {
+      clearInterval(this._adInterval);
+      this._adInterval = null;
+    }
+    const adOverlay = document.getElementById('ad-overlay');
+    if (adOverlay) {
+      adOverlay.style.display = 'none';
+    }
+  }
+
+  markRewardUnlocked() {
+    const timerEl = document.getElementById('ad-countdown');
+    const skipBtn = document.getElementById('btn-skip-ad');
+    const progressFill = document.getElementById('ad-progress-fill');
+    if (timerEl) timerEl.innerText = '✅ UNLOCKED!';
+    if (progressFill) progressFill.style.width = '100%';
+    if (skipBtn) {
+      skipBtn.style.display = 'inline-block';
+      skipBtn.innerText = 'CLAIM REWARD 🎁';
+    }
   }
 
   showRoomLobby(roomId, roomData, isHost) {
@@ -749,57 +782,172 @@ class UIController {
 
     ctx.clearRect(0, 0, w, h);
 
-    const scale = 0.32;
-    const offsetX = w / 2;
-    const offsetY = h / 2 - 10;
+    const track = this.game.track;
+    if (!track.waypoints || track.waypoints.length === 0) return;
 
-    ctx.strokeStyle = 'rgba(0, 229, 255, 0.4)';
-    ctx.lineWidth = 4;
+    // Cache track bounding box so all maps fit 100% inside the minimap
+    if (!track._minimapBounds || track._minimapTrackId !== track.trackId) {
+      let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+      track.waypoints.forEach(pt => {
+        if (pt.x < minX) minX = pt.x;
+        if (pt.x > maxX) maxX = pt.x;
+        if (pt.z < minZ) minZ = pt.z;
+        if (pt.z > maxZ) maxZ = pt.z;
+      });
+      track._minimapBounds = {
+        minX, maxX, minZ, maxZ,
+        centerX: (minX + maxX) / 2,
+        centerZ: (minZ + maxZ) / 2,
+        spanX: Math.max(80, maxX - minX),
+        spanZ: Math.max(80, maxZ - minZ)
+      };
+      track._minimapTrackId = track.trackId;
+    }
+
+    const bounds = track._minimapBounds;
+    const pad = 24;
+    const scale = Math.min((w - pad * 2) / bounds.spanX, (h - pad * 2) / bounds.spanZ);
+
+    const toMapX = (worldX) => w / 2 + (worldX - bounds.centerX) * scale;
+    const toMapY = (worldZ) => h / 2 + (worldZ - bounds.centerZ) * scale;
+
+    // Subtle background radar scan circles
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.08)';
+    ctx.lineWidth = 1;
     ctx.beginPath();
+    ctx.arc(w / 2, h / 2, w * 0.42, 0, Math.PI * 2);
+    ctx.arc(w / 2, h / 2, w * 0.22, 0, Math.PI * 2);
+    ctx.stroke();
 
-    const points = this.game.track.waypoints;
-    for (let i = 0; i < points.length; i++) {
-      const px = offsetX + points[i].x * scale;
-      const py = offsetY + points[i].z * scale;
+    // 1. Draw smooth road outline & neon glow
+    const curvePoints = track.trackCurve ? track.trackCurve.getPoints(80) : track.waypoints;
+
+    // Outer Neon Glow Road Track
+    ctx.beginPath();
+    for (let i = 0; i < curvePoints.length; i++) {
+      const px = toMapX(curvePoints[i].x);
+      const py = toMapY(curvePoints[i].z);
       if (i === 0) ctx.moveTo(px, py);
       else ctx.lineTo(px, py);
     }
     ctx.closePath();
+    ctx.strokeStyle = 'rgba(14, 165, 233, 0.28)';
+    ctx.lineWidth = 9;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
     ctx.stroke();
 
-    // AI Bots Dots (Yellow / Blue)
-    this.game.aiBots.forEach(bot => {
-      if (bot.car && bot.car.mesh) {
-        const bx = offsetX + bot.car.mesh.position.x * scale;
-        const by = offsetY + bot.car.mesh.position.z * scale;
-        ctx.fillStyle = bot.car.color || '#ffea00';
-        ctx.beginPath();
-        ctx.arc(bx, by, 4, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    });
+    // Core Crisp Racing Track Line
+    ctx.beginPath();
+    for (let i = 0; i < curvePoints.length; i++) {
+      const px = toMapX(curvePoints[i].x);
+      const py = toMapY(curvePoints[i].z);
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 3.5;
+    ctx.stroke();
 
-    // Remote Players Dots
-    this.game.network.remotePlayers.forEach((rcar) => {
-      const rx = offsetX + rcar.mesh.position.x * scale;
-      const ry = offsetY + rcar.mesh.position.z * scale;
-      ctx.fillStyle = rcar.color || '#ffea00';
-      ctx.beginPath();
-      ctx.arc(rx, ry, 4, 0, Math.PI * 2);
-      ctx.fill();
-    });
-
-    // Local Player Dot
-    if (localCar) {
-      const lx = offsetX + localCar.mesh.position.x * scale;
-      const ly = offsetY + localCar.mesh.position.z * scale;
-      ctx.fillStyle = '#ffffff';
-      ctx.shadowColor = '#00e5ff';
+    // Start / Finish Line Marker
+    if (track.waypoints.length > 0) {
+      const startPt = track.waypoints[0];
+      const sx = toMapX(startPt.x);
+      const sy = toMapY(startPt.z);
+      ctx.fillStyle = '#ffea00';
+      ctx.shadowColor = '#ffea00';
       ctx.shadowBlur = 8;
       ctx.beginPath();
-      ctx.arc(lx, ly, 6, 0, Math.PI * 2);
+      ctx.arc(sx, sy, 3.8, 0, Math.PI * 2);
       ctx.fill();
       ctx.shadowBlur = 0;
+    }
+
+    // 2. Render AI Bots (Distinct directional racing arrows)
+    if (this.game.aiBots) {
+      this.game.aiBots.forEach(bot => {
+        if (bot.car && bot.car.mesh && !bot.car.isWrecked) {
+          const bx = toMapX(bot.car.position.x);
+          const by = toMapY(bot.car.position.z);
+          const bRot = bot.car.rotation.y || 0;
+
+          ctx.save();
+          ctx.translate(bx, by);
+          ctx.rotate(-bRot);
+
+          ctx.fillStyle = bot.car.color || '#f59e0b';
+          ctx.beginPath();
+          ctx.moveTo(0, 5.5);
+          ctx.lineTo(-3.5, -4.5);
+          ctx.lineTo(0, -2);
+          ctx.lineTo(3.5, -4.5);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+        }
+      });
+    }
+
+    // 3. Render Remote Players (Multiplayer)
+    if (this.game.network && this.game.network.remotePlayers) {
+      this.game.network.remotePlayers.forEach((rcar) => {
+        if (rcar.mesh) {
+          const rx = toMapX(rcar.mesh.position.x);
+          const ry = toMapY(rcar.mesh.position.z);
+          const rRot = rcar.rotation ? rcar.rotation.y : 0;
+
+          ctx.save();
+          ctx.translate(rx, ry);
+          ctx.rotate(-rRot);
+
+          ctx.fillStyle = rcar.color || '#ec4899';
+          ctx.beginPath();
+          ctx.moveTo(0, 5.5);
+          ctx.lineTo(-3.5, -4.5);
+          ctx.lineTo(0, -2);
+          ctx.lineTo(3.5, -4.5);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+        }
+      });
+    }
+
+    // 4. Render Local Player Car (Bright glowing dynamic sports-car chevron with radar pulse!)
+    if (localCar && !localCar.isWrecked) {
+      const lx = toMapX(localCar.position.x);
+      const ly = toMapY(localCar.position.z);
+      const lRot = localCar.rotation.y || 0;
+
+      // Radar Pulse Wave around Player Car
+      const pulseSize = 9 + Math.sin(performance.now() * 0.007) * 3;
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.35)';
+      ctx.beginPath();
+      ctx.arc(lx, ly, pulseSize, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Heading Arrowhead
+      ctx.save();
+      ctx.translate(lx, ly);
+      ctx.rotate(-lRot);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowColor = '#38bdf8';
+      ctx.shadowBlur = 12;
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 1.6;
+
+      ctx.beginPath();
+      ctx.moveTo(0, 8.5);    // Front nose of car pointing along heading
+      ctx.lineTo(-6, -6.5);  // Rear left
+      ctx.lineTo(0, -3.5);   // Center rear indent
+      ctx.lineTo(6, -6.5);   // Rear right
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.restore();
     }
   }
 

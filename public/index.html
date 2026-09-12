@@ -363,7 +363,7 @@
 
     <!-- Mini-Map Radar (Top Left) -->
     <div class="minimap-container">
-      <canvas id="minimap-canvas" width="140" height="140"></canvas>
+      <canvas id="minimap-canvas" width="180" height="180"></canvas>
     </div>
 
     <!-- Bottom Speedometer, Gear, RPM & Nitro -->
@@ -449,14 +449,34 @@
     </div>
   </div>
 
-  <!-- OFFICIAL PLAYGAMA AD LOADING OVERLAY (Clean, Compliant, No 3rd-Party Trackers/Sensitive Ads) -->
-  <div id="ad-overlay" class="overlay-center" style="display: none; z-index: 99999;">
-    <div class="ad-card glass-card" style="text-align: center; padding: 28px 36px; max-width: 440px; border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: 20px;">
-      <div class="ad-spinner" style="font-size: 2.6rem; margin-bottom: 12px; animation: spin 1.5s linear infinite; display: inline-block;">⏳</div>
-      <h3 id="ad-brand-title" style="font-family: 'Orbitron', sans-serif; font-size: 1.3rem; font-weight: 800; color: #38bdf8; margin-bottom: 8px; letter-spacing: 1px;">ADVERTISEMENT [AD]</h3>
-      <p id="ad-brand-desc" style="font-size: 0.95rem; color: #94a3b8; margin-bottom: 16px;">Ad playback in progress...</p>
-      <div id="ad-countdown" class="ad-timer" style="font-family: 'Orbitron', sans-serif; font-size: 1.1rem; font-weight: 700; color: #f59e0b; margin-bottom: 18px;">Closing shortly...</div>
-      <button id="btn-skip-ad" class="btn btn-hero" style="display: none; width: 100%;">CONTINUE TO GAME ⏭️</button>
+  <!-- OFFICIAL PLAYGAMA AD OVERLAY (Compliant, Centered, High-Impact Visual Banner) -->
+  <div id="ad-overlay" class="overlay-center" style="display: none; z-index: 999999;">
+    <div class="ad-card glass-card">
+      <div class="ad-header-row">
+        <span class="ad-badge-tag">SPONSORED [AD]</span>
+        <span id="ad-countdown" class="ad-countdown-tag">0:04</span>
+      </div>
+
+      <div class="ad-banner-visual">
+        <div class="ad-banner-icon">🏎️⚡</div>
+        <h3 id="ad-brand-title" class="ad-banner-title">CYBER RACING SPEEDWAY</h3>
+        <p id="ad-brand-desc" class="ad-banner-desc">Drift around high-speed neon circuits, unlock hypercars & compete globally!</p>
+        <div class="ad-tags-row">
+          <span class="ad-tag-pill">🔥 100% FREE</span>
+          <span class="ad-tag-pill">⚡ INSTANT PLAY</span>
+          <span class="ad-tag-pill">⭐ 4.9 RATING</span>
+        </div>
+      </div>
+
+      <!-- Animated Progress Bar -->
+      <div class="ad-progress-track">
+        <div id="ad-progress-fill" class="ad-progress-fill" style="width: 0%;"></div>
+      </div>
+
+      <div class="ad-actions-row">
+        <button id="btn-skip-ad" class="btn btn-hero ad-action-btn" style="display: none;">CONTINUE TO GAME ⏭️</button>
+      </div>
+      <small id="ad-footer-note" class="ad-footer-note">Sponsored by Playgama Game Network</small>
     </div>
   </div>
 
