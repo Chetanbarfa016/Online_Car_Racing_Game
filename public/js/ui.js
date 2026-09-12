@@ -52,11 +52,12 @@ class UIController {
         }
 
         const stats = {
-          supercar: { speed: '85%', accel: '80%', drift: '90%', speedVal: '250 KM/H', accelVal: '0-100 in 2.8s', driftVal: '9.4 / 10' },
-          muscle: { speed: '80%', accel: '92%', drift: '96%', speedVal: '238 KM/H', accelVal: '0-100 in 2.5s', driftVal: '9.8 / 10' },
-          formula1: { speed: '98%', accel: '96%', drift: '78%', speedVal: '262 KM/H', accelVal: '0-100 in 1.9s', driftVal: '8.2 / 10' },
-          cybertruck: { speed: '75%', accel: '78%', drift: '95%', speedVal: '232 KM/H', accelVal: '0-100 in 3.1s', driftVal: '9.6 / 10' }
-        }[this.selectedModel];
+          supercar: { speed: '88%', accel: '85%', drift: '93%', speedVal: '255 KM/H', accelVal: '0-100 in 2.6s', driftVal: '9.3 / 10' },
+          hypercar: { speed: '94%', accel: '92%', drift: '92%', speedVal: '268 KM/H', accelVal: '0-100 in 2.2s', driftVal: '9.2 / 10' },
+          formula1: { speed: '98%', accel: '98%', drift: '88%', speedVal: '275 KM/H', accelVal: '0-100 in 1.8s', driftVal: '8.8 / 10' },
+          muscle: { speed: '84%', accel: '88%', drift: '96%', speedVal: '248 KM/H', accelVal: '0-100 in 2.7s', driftVal: '9.6 / 10' },
+          speedster: { speed: '96%', accel: '95%', drift: '89%', speedVal: '270 KM/H', accelVal: '0-100 in 1.9s', driftVal: '8.9 / 10' }
+        }[this.selectedModel] || { speed: '88%', accel: '85%', drift: '93%', speedVal: '255 KM/H', accelVal: '0-100 in 2.6s', driftVal: '9.3 / 10' };
 
         if (stats) {
           const sSpeed = document.getElementById('stat-speed');
@@ -223,7 +224,7 @@ class UIController {
       this.game.resetLocalCar();
     });
 
-    // 14. Wrecked Modal Buttons (Respawn & Showroom)
+    // 14. Wrecked Modal Buttons (Respawn, Watch Ad, Showroom)
     const btnRespawn = document.getElementById('btn-respawn-repair');
     if (btnRespawn) {
       btnRespawn.addEventListener('click', () => {
@@ -232,8 +233,23 @@ class UIController {
           this.game.localCar.repair();
           this.game.resetLocalCar();
           this.updateLifelines(this.game.localCar.lives, this.game.localCar.maxLives);
-          this.showToast('🔧 Car Repaired! Back in the Race!');
+          this.showToast('🔧 Car Repaired! 5/5 Health Restored!');
         }
+      });
+    }
+
+    const btnWatchAdRespawn = document.getElementById('btn-watch-ad-respawn');
+    if (btnWatchAdRespawn) {
+      btnWatchAdRespawn.addEventListener('click', () => {
+        this.showAdOverlay(() => {
+          document.getElementById('wrecked-overlay').style.display = 'none';
+          if (this.game.localCar) {
+            this.game.localCar.repair();
+            this.game.resetLocalCar();
+            this.updateLifelines(this.game.localCar.lives, this.game.localCar.maxLives);
+            this.showToast('✨ Rewarded! Free Full Repair Restored!');
+          }
+        });
       });
     }
 
@@ -245,8 +261,8 @@ class UIController {
     }
   }
 
-  // Update Lifeline / Armor Hearts (❤️❤️❤️❤️)
-  updateLifelines(lives, maxLives = 4) {
+  // Update Lifeline / Armor Hearts (❤️❤️❤️❤️❤️)
+  updateLifelines(lives, maxLives = 5) {
     const container = document.getElementById('hud-lifelines');
     if (!container) return;
 
@@ -294,7 +310,7 @@ class UIController {
       return;
     }
 
-    // 2. Otherwise Show Custom High-Converting Sponsor / Google Ad Modal
+    // 2. Otherwise Show High-Converting Monetization Ad Modal
     this.showCustomAdModal(callback);
   }
 
@@ -302,10 +318,43 @@ class UIController {
     const adOverlay = document.getElementById('ad-overlay');
     const timerEl = document.getElementById('ad-countdown');
     const skipBtn = document.getElementById('btn-skip-ad');
+    const brandTitle = document.getElementById('ad-brand-title');
+    const brandDesc = document.getElementById('ad-brand-desc');
+    const ctaLink = document.getElementById('ad-cta-link');
 
     if (!adOverlay) {
       if (callback) callback();
       return;
+    }
+
+    // Dynamic high-paying gaming sponsor rotation
+    const sponsors = [
+      {
+        title: 'TURBO RACER PRO: NITRO PASS',
+        desc: 'Unlock 50+ Custom Supercars, Rare Paint Decals & Maximum Boost!',
+        cta: '🚀 PLAY / INSTALL NOW',
+        url: 'https://playgama.com'
+      },
+      {
+        title: 'CYBER DRIFT ARENA 3D',
+        desc: 'Compete in live PvP street tournaments and win rare supercar blueprints!',
+        cta: '⚡ PLAY NOW FREE',
+        url: 'https://playgama.com'
+      },
+      {
+        title: 'HYPER FORMULA RACING 2026',
+        desc: 'Official Next-Gen Formula Aero Simulation with Ultra Realistic Physics!',
+        cta: '🏎️ JOIN CHAMPIONSHIP',
+        url: 'https://playgama.com'
+      }
+    ];
+
+    const currentSponsor = sponsors[Math.floor(Math.random() * sponsors.length)];
+    if (brandTitle) brandTitle.innerText = currentSponsor.title;
+    if (brandDesc) brandDesc.innerText = currentSponsor.desc;
+    if (ctaLink) {
+      ctaLink.innerText = currentSponsor.cta;
+      ctaLink.href = currentSponsor.url;
     }
 
     adOverlay.style.display = 'flex';
@@ -318,26 +367,22 @@ class UIController {
       }
     } catch (e) {}
 
-    let timeLeft = 3;
+    let timeLeft = 5;
     if (timerEl) timerEl.innerText = 'Ad closes in ' + timeLeft + 's';
 
     const interval = setInterval(() => {
       timeLeft--;
       if (timeLeft <= 0) {
         clearInterval(interval);
-        if (skipBtn) skipBtn.style.display = 'inline-block';
         if (timerEl) timerEl.innerText = 'Reward / Continue Ready';
-
-        const finishAd = () => {
-          adOverlay.style.display = 'none';
-          if (skipBtn) skipBtn.onclick = null;
-          if (callback) callback();
-        };
-
         if (skipBtn) {
-          skipBtn.onclick = finishAd;
+          skipBtn.style.display = 'inline-block';
+          skipBtn.onclick = () => {
+            adOverlay.style.display = 'none';
+            skipBtn.onclick = null;
+            if (callback) callback();
+          };
         }
-        setTimeout(finishAd, 800);
       } else {
         if (timerEl) timerEl.innerText = 'Ad closes in ' + timeLeft + 's';
       }
@@ -407,6 +452,16 @@ class UIController {
     if (nitroBar) {
       const pct = (car.nitroAmount / car.nitroMax) * 100;
       nitroBar.style.width = pct + '%';
+      if (car.isShockwave) {
+        nitroBar.style.background = 'linear-gradient(90deg, #ec4899, #d946ef, #ffffff)';
+        nitroBar.style.boxShadow = '0 0 15px #d946ef';
+      } else if (car.nitroStage === 2) {
+        nitroBar.style.background = 'linear-gradient(90deg, #00e5ff, #38bdf8, #ffffff)';
+        nitroBar.style.boxShadow = '0 0 12px #00e5ff';
+      } else {
+        nitroBar.style.background = 'linear-gradient(90deg, #ff9800, #ffea00)';
+        nitroBar.style.boxShadow = '0 0 8px #ffea00';
+      }
     }
 
     const lapEl = document.getElementById('hud-lap-text');
@@ -529,6 +584,21 @@ class UIController {
     });
 
     overlay.style.display = 'flex';
+  }
+
+  showStuntBadge(msg) {
+    let stuntEl = document.getElementById('hud-stunt-banner');
+    if (!stuntEl) {
+      stuntEl = document.createElement('div');
+      stuntEl.id = 'hud-stunt-banner';
+      stuntEl.className = 'stunt-banner';
+      document.body.appendChild(stuntEl);
+    }
+    stuntEl.innerText = msg;
+    stuntEl.classList.add('active');
+    setTimeout(() => {
+      stuntEl.classList.remove('active');
+    }, 1800);
   }
 
   showToast(msg) {

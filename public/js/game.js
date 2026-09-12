@@ -74,6 +74,7 @@ class Game {
     this.container.appendChild(this.renderer.domElement);
 
     // 4. Lighting & Showroom
+    this.initStudioEnvironment();
     this.initLighting();
     this.createShowroomTurntable();
 
@@ -101,23 +102,84 @@ class Game {
     this.animate();
   }
 
+  initStudioEnvironment() {
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+
+      // Sleek Dark Horizon Gradient
+      const bgGrad = ctx.createLinearGradient(0, 0, 0, 512);
+      bgGrad.addColorStop(0, '#0f172a');
+      bgGrad.addColorStop(0.42, '#1e293b');
+      bgGrad.addColorStop(0.55, '#0b1329');
+      bgGrad.addColorStop(1, '#020617');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, 1024, 512);
+
+      // Huge overhead softbox white light strip (produces razor-sharp car bodyline reflections)
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowColor = '#ffffff';
+      ctx.shadowBlur = 45;
+      ctx.fillRect(200, 50, 624, 100);
+
+      // Secondary softbox strip
+      ctx.fillStyle = '#e2e8f0';
+      ctx.shadowBlur = 30;
+      ctx.fillRect(150, 160, 724, 40);
+
+      // Left vibrant Cyan Studio Rim Softbox
+      ctx.fillStyle = '#00e5ff';
+      ctx.shadowColor = '#00e5ff';
+      ctx.shadowBlur = 50;
+      ctx.fillRect(40, 180, 90, 180);
+
+      // Right vibrant Magenta Studio Rim Softbox
+      ctx.fillStyle = '#ff2a5f';
+      ctx.shadowColor = '#ff2a5f';
+      ctx.shadowBlur = 50;
+      ctx.fillRect(894, 180, 90, 180);
+
+      // Floor Horizon Line Reflection
+      ctx.fillStyle = '#38bdf8';
+      ctx.shadowColor = '#38bdf8';
+      ctx.shadowBlur = 20;
+      ctx.fillRect(0, 265, 1024, 10);
+
+      const envTexture = new THREE.CanvasTexture(canvas);
+      envTexture.mapping = THREE.EquirectangularReflectionMapping;
+      this.scene.environment = envTexture;
+    } catch (e) {
+      console.warn('Studio env map init notice:', e);
+    }
+  }
+
   initLighting() {
-    this.ambientLight = new THREE.AmbientLight(0xdbeafe, 0.65);
+    this.ambientLight = new THREE.AmbientLight(0xffffff, 0.95);
     this.scene.add(this.ambientLight);
 
-    this.mainSunLight = new THREE.DirectionalLight(0x00e5ff, 1.4);
-    this.mainSunLight.position.set(120, 180, 80);
+    // Key Front-Top Light
+    this.mainSunLight = new THREE.DirectionalLight(0xffffff, 2.2);
+    this.mainSunLight.position.set(100, 160, 90);
     this.mainSunLight.castShadow = true;
     this.mainSunLight.shadow.mapSize.width = 2048;
     this.mainSunLight.shadow.mapSize.height = 2048;
     this.scene.add(this.mainSunLight);
 
-    this.fillLight = new THREE.DirectionalLight(0xff2a5f, 1.0);
-    this.fillLight.position.set(-120, 90, -120);
+    // Rim Backlight 1 (Cyan)
+    this.fillLight = new THREE.DirectionalLight(0x00e5ff, 1.8);
+    this.fillLight.position.set(-100, 90, -100);
     this.scene.add(this.fillLight);
 
-    this.showroomSpotlight = new THREE.SpotLight(0xffffff, 2.5, 30, Math.PI / 4, 0.3, 1.2);
-    this.showroomSpotlight.position.set(0, 10, 0);
+    // Rim Backlight 2 (Magenta / Orange)
+    this.rimLight2 = new THREE.DirectionalLight(0xff2a5f, 1.6);
+    this.rimLight2.position.set(100, 70, -100);
+    this.scene.add(this.rimLight2);
+
+    // Showroom Overhead Focused Spotlight
+    this.showroomSpotlight = new THREE.SpotLight(0xffffff, 3.2, 40, Math.PI / 3.5, 0.2, 1.0);
+    this.showroomSpotlight.position.set(0, 12, 0);
     this.showroomSpotlight.castShadow = true;
     this.scene.add(this.showroomSpotlight);
   }
@@ -340,9 +402,10 @@ class Game {
   spawnAIBots() {
     this.clearAIBots();
     const botConfigs = [
-      { name: 'Apex Bot', model: 'formula1', color: '#ec4899', x: 3.5, z: -10, baseSpeed: 180, maxSpeed: 235 },
-      { name: 'Thunder Bot', model: 'muscle', color: '#ffea00', x: -3.5, z: -25, baseSpeed: 165, maxSpeed: 220 },
-      { name: 'Titan Bot', model: 'cybertruck', color: '#2979ff', x: 3.5, z: -25, baseSpeed: 160, maxSpeed: 215 }
+      { name: 'Apex Bot', model: 'formula1', color: '#00e5ff', x: 3.5, z: -10, baseSpeed: 185, maxSpeed: 240 },
+      { name: 'Solaris Bot', model: 'hypercar', color: '#ffea00', x: -3.5, z: -25, baseSpeed: 180, maxSpeed: 235 },
+      { name: 'Thunder Bot', model: 'muscle', color: '#2979ff', x: 3.5, z: -25, baseSpeed: 175, maxSpeed: 230 },
+      { name: 'Quantum Bot', model: 'speedster', color: '#ec4899', x: -3.5, z: -40, baseSpeed: 182, maxSpeed: 238 }
     ];
 
     botConfigs.forEach(cfg => {
@@ -451,46 +514,111 @@ class Game {
     this.localCar.resetToTrack(cp.position, cp.tangent);
   }
 
-  // Crash Barrier Collision & Lifeline / Elimination Check
+  // Crash Barrier Collision & 5-Hit Health System
   checkTrackCollision(delta) {
     if (!this.localCar || this.localCar.isWrecked || this.gameState !== 'RACING') return;
 
     const carPos = this.localCar.position;
     const halfWidth = (this.track.trackWidth || 24) / 2; // 12m
     const distToCenter = this.track.getDistanceToCenterline ? this.track.getDistanceToCenterline(carPos) : 0;
+    const curCp = (this.track.checkpoints && this.track.checkpoints[this.localCar.currentCheckpoint]) ? this.track.checkpoints[this.localCar.currentCheckpoint] : { position: new THREE.Vector3(0, 0.46, 0) };
 
-    // Case 1: Road se zyada bahar chala gaya (> 13.5m) -> Instant OUT / Eliminated!
-    if (distToCenter > halfWidth + 1.5) {
-      this.localCar.takeDamage(4, carPos);
-      this.ui.updateLifelines(0, 4);
-      this.ui.flashDamageEffect();
-      this.ui.showToast('💥 OUT! OFF-TRACK (ROAD SE BAHAR GAYA)!');
-      this.ui.showWreckedOverlay();
+    // Check Stunt Ramps on Track
+    if (this.track && this.track.stuntRamps) {
+      this.track.stuntRamps.forEach(ramp => {
+        if (!this.localCar.isAirborne && carPos.distanceTo(ramp.position) < ramp.radius) {
+          this.localCar.triggerRampJump(ramp.stuntType);
+        }
+      });
+    }
+
+    // Check Nitro Pickups on Track
+    if (this.track && this.track.nitroPickups) {
+      this.track.nitroPickups.forEach(np => {
+        if (np.active && carPos.distanceTo(np.mesh.position) < 3.5) {
+          np.active = false;
+          np.mesh.visible = false;
+          this.localCar.nitroAmount = 100;
+          this.ui.showToast('⚡ NITRO TANK COLLECTED! +100% BOOST');
+          setTimeout(() => {
+            np.active = true;
+            np.mesh.visible = true;
+          }, 8000);
+        }
+      });
+    }
+
+    // Case 1: Road se zyada bahar chala gaya (> 14m) -> Smoothly steer back onto road with momentum
+    if (distToCenter > halfWidth + 1.8) {
+      // Smoothly guide back onto the drivable track surface without stopping the race
+      this.localCar.position.x = THREE.MathUtils.lerp(this.localCar.position.x, curCp.position.x, delta * 3.5);
+      this.localCar.position.z = THREE.MathUtils.lerp(this.localCar.position.z, curCp.position.z, delta * 3.5);
+      this.localCar.mesh.position.copy(this.localCar.position);
+      this.localCar.speed = Math.max(35, this.localCar.speed * 0.88);
+      this.localCar.emitCrashSparks(carPos);
       return;
     }
 
-    // Case 2: Deewar / Barrier se takraye
-    if (distToCenter >= halfWidth - 0.5) {
+    // Case 2: Deewar / Guardrail se takraye / ragad khaye (Wall Scraping & Friction)
+    if (distToCenter >= halfWidth - 0.4) {
       const speedAbs = Math.abs(this.localCar.speed);
-      if (speedAbs > 30) {
-        // High speed wall crash -> Instant OUT!
-        this.localCar.takeDamage(4, carPos);
-        this.ui.updateLifelines(0, 4);
-        this.ui.flashDamageEffect();
-        this.ui.showToast('💥 CRASH! DIWAR SE TAKRAYE - OUT!');
-        this.ui.showWreckedOverlay();
-      } else if (speedAbs > 8 && this.localCar.damageCooldown <= 0) {
-        // Minor wall scrape -> Deduct 1 life
-        this.localCar.takeDamage(1, carPos);
-        this.ui.updateLifelines(this.localCar.lives, this.localCar.maxLives);
-        this.ui.flashDamageEffect();
-        this.ui.showToast('⚠️ WALL SCRAPE! Lifeline: ' + this.localCar.lives + '/' + this.localCar.maxLives);
-        this.localCar.speed = -this.localCar.speed * 0.4;
-        if (this.localCar.lives <= 0) {
-          this.ui.showWreckedOverlay();
+      if (speedAbs > 10) {
+        // Apply realistic wall friction deceleration (speed kam hoti hai lekin car smooth chalti rehti hai)
+        this.localCar.speed *= Math.max(0.65, 1 - 0.55 * delta);
+
+        // Continuous shower of sparks along the barrier
+        this.localCar.emitCrashSparks(carPos);
+
+        // Gently deflect car away from the wall so it slides smoothly along the barrier without getting stuck
+        const pushDir = new THREE.Vector3().subVectors(curCp.position, carPos).setY(0).normalize();
+        this.localCar.position.addScaledVector(pushDir, 0.28);
+        this.localCar.mesh.position.copy(this.localCar.position);
+
+        if (this.localCar.damageCooldown <= 0) {
+          this.localCar.damageCooldown = 0.35;
+          if (this.localCar.playCrashSound) {
+            this.localCar.playCrashSound();
+          }
         }
       }
     }
+  }
+
+  // Asphalt Nitro Combat & Takedown Collision System
+  checkVehicleCollisions(delta) {
+    if (!this.localCar || this.localCar.isWrecked || this.gameState !== 'RACING') return;
+
+    const carPos = this.localCar.position;
+
+    this.aiBots.forEach((bot) => {
+      if (!bot.car || bot.car.isWrecked) return;
+
+      const botPos = bot.car.position;
+      const dist = carPos.distanceTo(botPos);
+
+      if (dist < 3.2) {
+        // Takedown Condition: Local player is Boosting / Shockwave at high speed
+        if (this.localCar.isBoosting && Math.abs(this.localCar.speed) > 100) {
+          bot.knockdown(this.localCar.velocity);
+          this.localCar.nitroAmount = 100;
+          this.localCar.emitCrashSparks(botPos);
+
+          if (this.ui) {
+            const takedownText = this.localCar.isShockwave ? '⚡ SHOCKWAVE TAKEDOWN!' : '💥 KNOCKDOWN!';
+            this.ui.showStuntBadge(takedownText + ' +100% NITRO');
+            this.ui.showToast('🏆 ' + takedownText + ' AI WRECKED!');
+          }
+        } else {
+          // Regular bumper nudge collision
+          const pushVector = new THREE.Vector3().subVectors(botPos, carPos).normalize();
+          bot.car.position.addScaledVector(pushVector, 0.4);
+          bot.car.mesh.position.copy(bot.car.position);
+          this.localCar.position.addScaledVector(pushVector, -0.4);
+          this.localCar.mesh.position.copy(this.localCar.position);
+          this.localCar.emitCrashSparks(carPos);
+        }
+      }
+    });
   }
 
   checkLapProgress() {
@@ -675,30 +803,32 @@ class Game {
     const carRot = this.localCar.rotation.y;
     const speedRatio = Math.abs(this.localCar.speed) / this.localCar.maxSpeed;
 
-    const targetFOV = 62 + speedRatio * 16 + (this.localCar.isBoosting ? 6 : 0);
-    this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, targetFOV, delta * 5);
+    const targetFOV = 60 + speedRatio * 18 + (this.localCar.isBoosting ? 8 : 0);
+    this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, targetFOV, delta * 6);
     this.camera.updateProjectionMatrix();
 
     let shakeX = 0;
     let shakeY = 0;
     if (this.localCar.isBoosting || this.localCar.isDrifting || this.localCar.damageCooldown > 0.5) {
-      shakeX = (Math.random() - 0.5) * 0.25;
-      shakeY = (Math.random() - 0.5) * 0.25;
+      shakeX = (Math.random() - 0.5) * 0.22;
+      shakeY = (Math.random() - 0.5) * 0.22;
     }
 
     if (this.cameraMode === 0) {
-      const distance = 11.5 + speedRatio * 2.0;
-      const height = 4.4 - speedRatio * 0.4;
+      const distance = 10.5 + speedRatio * 2.2;
+      const height = (this.localCar.isAirborne ? 5.2 : 3.8) - speedRatio * 0.3;
+      
+      const driftLateralOffset = this.localCar.isDrifting ? (this.localCar.steeringAngle * 2.2) : 0;
       
       const offset = new THREE.Vector3(
-        -Math.sin(carRot) * distance + shakeX,
+        -Math.sin(carRot) * distance + Math.cos(carRot) * driftLateralOffset + shakeX,
         height + shakeY,
-        -Math.cos(carRot) * distance
+        -Math.cos(carRot) * distance - Math.sin(carRot) * driftLateralOffset
       );
       const targetPos = new THREE.Vector3().addVectors(carPos, offset);
-      this.camera.position.lerp(targetPos, delta * 8);
+      this.camera.position.lerp(targetPos, delta * 9);
 
-      const lookTarget = new THREE.Vector3(carPos.x, carPos.y + 1.2, carPos.z);
+      const lookTarget = new THREE.Vector3(carPos.x, carPos.y + 1.1, carPos.z);
       this.camera.lookAt(lookTarget);
     } else if (this.cameraMode === 1) {
       const hoodOffset = new THREE.Vector3(
@@ -716,11 +846,11 @@ class Game {
       this.camera.lookAt(new THREE.Vector3().addVectors(this.camera.position, forward));
     } else {
       const farOffset = new THREE.Vector3(
-        -Math.sin(carRot) * 22,
-        10.5,
-        -Math.cos(carRot) * 22
+        -Math.sin(carRot) * 20,
+        9.5,
+        -Math.cos(carRot) * 20
       );
-      this.camera.position.lerp(new THREE.Vector3().addVectors(carPos, farOffset), delta * 5);
+      this.camera.position.lerp(new THREE.Vector3().addVectors(carPos, farOffset), delta * 6);
       this.camera.lookAt(carPos);
     }
   }
@@ -738,19 +868,19 @@ class Game {
     // 1. AAA Showroom Camera & Turntable Orbit (Lobby State)
     if (this.gameState === 'LOBBY') {
       if (!this.isDragging) {
-        this.showroomAngle += delta * 0.3;
+        this.showroomAngle += delta * 0.25;
       }
 
-      const orbitDist = 8.5;
+      const orbitDist = 7.0;
       const camX = Math.sin(this.showroomAngle) * orbitDist;
       const camZ = Math.cos(this.showroomAngle) * orbitDist;
       
       this.camera.position.set(camX, this.showroomElevation, camZ);
-      this.camera.lookAt(0, 0.65, 0);
+      this.camera.lookAt(0, 0.6, 0);
 
       if (this.turntableMesh) {
         this.turntableMesh.visible = true;
-        this.turntableMesh.rotation.y += delta * 0.2;
+        this.turntableMesh.rotation.y += delta * 0.18;
       }
       if (this.showroomSpotlight) {
         this.showroomSpotlight.visible = true;
@@ -763,6 +893,7 @@ class Game {
       
       this.localCar.update(delta, input);
       this.checkTrackCollision(delta);
+      this.checkVehicleCollisions(delta);
       this.checkLapProgress();
       this.updateCamera(delta);
       this.updateWarpParticles(delta);

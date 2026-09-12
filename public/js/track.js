@@ -10,6 +10,8 @@ class RacingTrack {
     this.environmentMeshes = [];
     this.animatedChevrons = [];
     this.startTrafficLights = [];
+    this.stuntRamps = [];
+    this.nitroPickups = [];
 
     this.init(this.trackId);
   }
@@ -117,6 +119,8 @@ class RacingTrack {
     this.buildCheckpoints();
     this.buildStartFinishGantry();
     this.buildAnimatedChevrons();
+    this.buildStuntRamps();
+    this.buildNitroPickups();
     this.buildEnvironment();
   }
 
@@ -131,6 +135,10 @@ class RacingTrack {
     this.animatedChevrons = [];
     this.startTrafficLights = [];
     this.checkpoints = [];
+    this.stuntRamps.forEach(r => this.scene.remove(r.mesh));
+    this.stuntRamps = [];
+    this.nitroPickups.forEach(n => this.scene.remove(n.mesh));
+    this.nitroPickups = [];
   }
 
   buildRoadMesh() {
@@ -191,82 +199,69 @@ class RacingTrack {
     canvas.height = 1024;
     const ctx = canvas.getContext('2d');
 
-    if (this.trackId === 'jungle_safari') {
-      // Rainforest Mud & Asphalt mix
-      ctx.fillStyle = '#1e241c';
-      ctx.fillRect(0, 0, 1024, 1024);
-      for (let j = 0; j < 6000; j++) {
-        ctx.fillStyle = Math.random() > 0.5 ? '#2d3829' : '#151a14';
-        ctx.fillRect(Math.random() * 1024, Math.random() * 1024, 2, 2);
-      }
-      ctx.fillStyle = '#00e676';
-      ctx.fillRect(20, 0, 16, 1024);
-      ctx.fillRect(988, 0, 16, 1024);
-      ctx.fillStyle = '#ffea00';
-      for (let y = 0; y < 1024; y += 128) {
-        ctx.fillRect(504, y, 16, 72);
-      }
-    } else if (this.trackId === 'city_center') {
-      // Modern Clean City Asphalt
-      ctx.fillStyle = '#181b22';
-      ctx.fillRect(0, 0, 1024, 1024);
-      for (let j = 0; j < 6000; j++) {
-        ctx.fillStyle = Math.random() > 0.5 ? '#242933' : '#111317';
-        ctx.fillRect(Math.random() * 1024, Math.random() * 1024, 2, 2);
-      }
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(20, 0, 16, 1024);
-      ctx.fillRect(988, 0, 16, 1024);
-      ctx.fillStyle = '#ffea00';
-      for (let y = 0; y < 1024; y += 128) {
-        ctx.fillRect(504, y, 16, 72);
-      }
-    } else if (this.trackId === 'desert_canyon') {
-      ctx.fillStyle = '#261f18';
-      ctx.fillRect(0, 0, 1024, 1024);
-      for (let j = 0; j < 6000; j++) {
-        ctx.fillStyle = Math.random() > 0.5 ? '#362b22' : '#1e1813';
-        ctx.fillRect(Math.random() * 1024, Math.random() * 1024, 2, 2);
-      }
-      ctx.fillStyle = '#ff9800';
-      ctx.fillRect(20, 0, 16, 1024);
-      ctx.fillRect(988, 0, 16, 1024);
-      ctx.fillStyle = '#ffea00';
-      for (let y = 0; y < 1024; y += 128) {
-        ctx.fillRect(504, y, 16, 72);
-      }
-    } else if (this.trackId === 'tokyo_circuit') {
-      ctx.fillStyle = '#11131a';
-      ctx.fillRect(0, 0, 1024, 1024);
-      ctx.fillStyle = '#ff0055';
-      ctx.fillRect(20, 0, 16, 1024);
-      ctx.fillRect(988, 0, 16, 1024);
-      ctx.fillStyle = '#ffffff';
-      for (let y = 0; y < 1024; y += 128) {
-        ctx.fillRect(504, y, 16, 72);
-      }
-    } else {
-      ctx.fillStyle = '#141720';
-      ctx.fillRect(0, 0, 1024, 1024);
-      for (let j = 0; j < 6000; j++) {
-        ctx.fillStyle = Math.random() > 0.5 ? '#1e222e' : '#0e1017';
-        ctx.fillRect(Math.random() * 1024, Math.random() * 1024, 2, 2);
-      }
-      ctx.fillStyle = '#00e5ff';
-      ctx.fillRect(20, 0, 16, 1024);
-      ctx.fillRect(988, 0, 16, 1024);
-      ctx.fillStyle = '#ffea00';
-      for (let y = 0; y < 1024; y += 128) {
-        ctx.fillRect(504, y, 16, 72);
-      }
+    // High-Definition Realistic Racing Tarmac Base
+    ctx.fillStyle = '#0f131a';
+    ctx.fillRect(0, 0, 1024, 1024);
+
+    // Realistic Micro-Asphalt Grain Texture
+    for (let j = 0; j < 12000; j++) {
+      const shade = Math.random();
+      ctx.fillStyle = shade > 0.6 ? '#1b222c' : (shade > 0.3 ? '#141820' : '#080a0e');
+      ctx.fillRect(Math.random() * 1024, Math.random() * 1024, 2, 2);
     }
+
+    // Racing Groove / Rubberized Tire Skid Marks
+    const tireGradL = ctx.createLinearGradient(180, 0, 360, 0);
+    tireGradL.addColorStop(0, 'rgba(10, 12, 16, 0.0)');
+    tireGradL.addColorStop(0.5, 'rgba(5, 7, 10, 0.65)');
+    tireGradL.addColorStop(1, 'rgba(10, 12, 16, 0.0)');
+    ctx.fillStyle = tireGradL;
+    ctx.fillRect(180, 0, 180, 1024);
+
+    const tireGradR = ctx.createLinearGradient(660, 0, 840, 0);
+    tireGradR.addColorStop(0, 'rgba(10, 12, 16, 0.0)');
+    tireGradR.addColorStop(0.5, 'rgba(5, 7, 10, 0.65)');
+    tireGradR.addColorStop(1, 'rgba(10, 12, 16, 0.0)');
+    ctx.fillStyle = tireGradR;
+    ctx.fillRect(660, 0, 180, 1024);
+
+    // Luminous Edge Strips according to Track Theme
+    const edgeColor = this.trackId === 'jungle_safari' ? '#00e676' : this.trackId === 'city_center' ? '#00d2ff' : this.trackId === 'desert_canyon' ? '#ff9800' : this.trackId === 'tokyo_circuit' ? '#ff0055' : '#00e5ff';
+    ctx.fillStyle = edgeColor;
+    ctx.shadowColor = edgeColor;
+    ctx.shadowBlur = 12;
+    ctx.fillRect(16, 0, 14, 1024);
+    ctx.fillRect(994, 0, 14, 1024);
+    ctx.shadowBlur = 0;
+
+    // Outer Asphalt Curbs
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(36, 0, 6, 1024);
+    ctx.fillRect(982, 0, 6, 1024);
+
+    // Center Dashed Racing Guideline
+    ctx.fillStyle = '#ffea00';
+    ctx.shadowColor = '#ffea00';
+    ctx.shadowBlur = 8;
+    for (let y = 0; y < 1024; y += 128) {
+      ctx.fillRect(504, y, 16, 76);
+    }
+    ctx.shadowBlur = 0;
 
     const roadTexture = new THREE.CanvasTexture(canvas);
     roadTexture.wrapS = THREE.RepeatWrapping;
     roadTexture.wrapT = THREE.RepeatWrapping;
     roadTexture.repeat.set(1, 45);
 
-    const roadMaterial = new THREE.MeshStandardMaterial({ map: roadTexture, roughness: 0.75, metalness: 0.25 });
+    // Ultra-Realistic Specular Wet-Look Asphalt Material
+    const roadMaterial = new THREE.MeshPhysicalMaterial({
+      map: roadTexture,
+      roughness: 0.38,
+      metalness: 0.28,
+      clearcoat: 0.45,
+      clearcoatRoughness: 0.12,
+      reflectivity: 0.8
+    });
     this.roadMesh = new THREE.Mesh(roadGeometry, roadMaterial);
     this.roadMesh.receiveShadow = true;
     this.scene.add(this.roadMesh);
@@ -512,6 +507,307 @@ class RacingTrack {
     }
   }
 
+  buildBranchingRoutes() {
+    this.branchMeshes = [];
+    if (this.waypoints.length < 10) return;
+
+    // 1. High-Altitude Skybridge Shortcut Route (Cuts across waypoints 3 -> 8)
+    const pStart = this.waypoints[3];
+    const pEnd = this.waypoints[7];
+    const midPoint = new THREE.Vector3().addVectors(pStart, pEnd).multiplyScalar(0.5);
+    midPoint.y = 8.5; // Elevated high in the sky
+
+    const bridgePoints = [
+      new THREE.Vector3(pStart.x, 2.0, pStart.z),
+      new THREE.Vector3(pStart.x * 0.7 + pEnd.x * 0.3, 7.5, pStart.z * 0.7 + pEnd.z * 0.3),
+      midPoint,
+      new THREE.Vector3(pStart.x * 0.3 + pEnd.x * 0.7, 7.0, pStart.z * 0.3 + pEnd.z * 0.7),
+      new THREE.Vector3(pEnd.x, 1.5, pEnd.z)
+    ];
+
+    const bridgeCurve = new THREE.CatmullRomCurve3(bridgePoints, false);
+    const bridgeGeo = new THREE.TubeGeometry(bridgeCurve, 40, 7.0, 8, false);
+    const bridgeMat = new THREE.MeshStandardMaterial({
+      color: 0x0c101d,
+      metalness: 0.92,
+      roughness: 0.2
+    });
+    const bridgeMesh = new THREE.Mesh(bridgeGeo, bridgeMat);
+    bridgeMesh.scale.set(1, 0.08, 1);
+    this.scene.add(bridgeMesh);
+    this.environmentMeshes.push(bridgeMesh);
+
+    // Glowing Neon Rails along Skybridge
+    const railMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff });
+    const railGeo = new THREE.TubeGeometry(bridgeCurve, 40, 0.25, 6, false);
+    const railMeshL = new THREE.Mesh(railGeo, railMat);
+    railMeshL.position.x -= 4.0;
+    railMeshL.position.y += 0.6;
+    const railMeshR = new THREE.Mesh(railGeo, railMat);
+    railMeshR.position.x += 4.0;
+    railMeshR.position.y += 0.6;
+    this.scene.add(railMeshL, railMeshR);
+    this.environmentMeshes.push(railMeshL, railMeshR);
+
+    // Support Concrete Pillars
+    const pillarMat = new THREE.MeshStandardMaterial({ color: 0x1f293d, metalness: 0.8, roughness: 0.3 });
+    [0.25, 0.5, 0.75].forEach(t => {
+      const pt = bridgeCurve.getPointAt(t);
+      const pillar = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.6, pt.y, 12), pillarMat);
+      pillar.position.set(pt.x, pt.y / 2, pt.z);
+      this.scene.add(pillar);
+      this.environmentMeshes.push(pillar);
+    });
+
+    // Super Shockwave Pickup on Skybridge Apex
+    const shockwaveGeo = new THREE.CylinderGeometry(0.6, 0.6, 1.8, 16);
+    const shockwaveMat = new THREE.MeshStandardMaterial({
+      color: 0xd946ef,
+      emissive: 0xd946ef,
+      emissiveIntensity: 0.9,
+      metalness: 0.95
+    });
+    const shockwavePickup = new THREE.Mesh(shockwaveGeo, shockwaveMat);
+    shockwavePickup.position.set(midPoint.x, midPoint.y + 1.2, midPoint.z);
+    this.scene.add(shockwavePickup);
+    this.nitroPickups.push({
+      mesh: shockwavePickup,
+      type: 'shockwave_nitro',
+      active: true,
+      baseY: midPoint.y + 1.2
+    });
+  }
+
+  buildStuntRamps() {
+    const rampIndices = [
+      { wpIdx: 2, type: 'barrel_roll', offset: -4.5, angleOffset: 0.25 },
+      { wpIdx: 3, type: 'super_jump', offset: 0.0, angleOffset: 0.0 }, // Launch to Skybridge
+      { wpIdx: 6, type: 'flat_spin', offset: 4.8, angleOffset: -0.2 },
+      { wpIdx: 10, type: 'barrel_roll', offset: -4.0, angleOffset: 0.25 },
+      { wpIdx: 13, type: 'flat_spin', offset: 0.0, angleOffset: 0.0 }
+    ];
+
+    const rampMat = new THREE.MeshStandardMaterial({
+      color: 0x111624,
+      metalness: 0.9,
+      roughness: 0.2
+    });
+
+    const hazardCanvas = document.createElement('canvas');
+    hazardCanvas.width = 256;
+    hazardCanvas.height = 256;
+    const hCtx = hazardCanvas.getContext('2d');
+    hCtx.fillStyle = '#ffea00';
+    hCtx.fillRect(0, 0, 256, 256);
+    hCtx.fillStyle = '#000000';
+    for (let i = -256; i < 512; i += 48) {
+      hCtx.beginPath();
+      hCtx.moveTo(i, 0);
+      hCtx.lineTo(i + 24, 0);
+      hCtx.lineTo(i - 48, 256);
+      hCtx.lineTo(i - 72, 256);
+      hCtx.closePath();
+      hCtx.fill();
+    }
+    const hazardTex = new THREE.CanvasTexture(hazardCanvas);
+    hazardTex.wrapS = THREE.RepeatWrapping;
+    hazardTex.wrapT = THREE.RepeatWrapping;
+    hazardTex.repeat.set(2, 2);
+
+    const faceMat = new THREE.MeshBasicMaterial({ map: hazardTex });
+
+    rampIndices.forEach((rData) => {
+      if (rData.wpIdx < this.waypoints.length) {
+        const wp = this.waypoints[rData.wpIdx];
+        const nextWp = this.waypoints[(rData.wpIdx + 1) % this.waypoints.length];
+        const tangent = new THREE.Vector3().subVectors(nextWp, wp).normalize();
+        const right = new THREE.Vector3().crossVectors(tangent, new THREE.Vector3(0, 1, 0)).normalize();
+
+        const rampGroup = new THREE.Group();
+        const rampGeo = new THREE.BoxGeometry(7.2, 2.2, 11.0);
+        const rampMesh = new THREE.Mesh(rampGeo, rampMat);
+        rampMesh.rotation.x = -0.24;
+        rampMesh.rotation.z = rData.angleOffset || 0;
+        rampMesh.position.y = 0.8;
+        rampGroup.add(rampMesh);
+
+        // Glowing Arrow Stripe
+        const arrowMesh = new THREE.Mesh(new THREE.PlaneGeometry(6.8, 10.5), faceMat);
+        arrowMesh.rotation.x = -Math.PI / 2 - 0.24;
+        arrowMesh.rotation.z = rData.angleOffset || 0;
+        arrowMesh.position.set(0, 0.9, 0);
+        rampGroup.add(arrowMesh);
+
+        // Neon Glow Trim
+        const neonTrim = new THREE.Mesh(new THREE.BoxGeometry(7.4, 0.2, 0.2), new THREE.MeshBasicMaterial({ color: 0x00e5ff }));
+        neonTrim.position.set(0, 1.85, -5.0);
+        rampGroup.add(neonTrim);
+
+        const rampPos = new THREE.Vector3().copy(wp).addScaledVector(right, rData.offset);
+        rampGroup.position.set(rampPos.x, 0, rampPos.z);
+        rampGroup.rotation.y = Math.atan2(tangent.x, tangent.z);
+
+        this.scene.add(rampGroup);
+        this.stuntRamps.push({
+          mesh: rampGroup,
+          position: rampPos,
+          radius: 6.0,
+          stuntType: rData.type
+        });
+      }
+    });
+  }
+
+  buildNitroPickups() {
+    const collectiblePositions = [
+      { wpIdx: 1, type: 'yellow_nitro' },
+      { wpIdx: 4, type: 'blue_nitro' },
+      { wpIdx: 7, type: 'gold_coin' },
+      { wpIdx: 9, type: 'blue_nitro' },
+      { wpIdx: 11, type: 'yellow_nitro' },
+      { wpIdx: 14, type: 'gold_coin' }
+    ];
+
+    const yellowMat = new THREE.MeshStandardMaterial({ color: 0xffea00, emissive: 0xffea00, emissiveIntensity: 0.8, metalness: 0.95 });
+    const blueMat = new THREE.MeshStandardMaterial({ color: 0x00e5ff, emissive: 0x00e5ff, emissiveIntensity: 0.8, metalness: 0.95 });
+    const goldMat = new THREE.MeshStandardMaterial({ color: 0xffb703, emissive: 0xffb703, emissiveIntensity: 0.7, metalness: 0.98, roughness: 0.1 });
+
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+    collectiblePositions.forEach((cp) => {
+      if (cp.wpIdx < this.waypoints.length) {
+        const wp = this.waypoints[cp.wpIdx];
+        const nextWp = this.waypoints[(cp.wpIdx + 1) % this.waypoints.length];
+        const midPoint = new THREE.Vector3().addVectors(wp, nextWp).multiplyScalar(0.5);
+
+        const group = new THREE.Group();
+
+        if (cp.type === 'gold_coin') {
+          const coin = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.1, 0.22, 20), goldMat);
+          coin.rotation.x = Math.PI / 2;
+          group.add(coin);
+        } else {
+          const isBlue = cp.type === 'blue_nitro';
+          const can = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.48, 1.7, 16), isBlue ? blueMat : yellowMat);
+          const ring = new THREE.Mesh(new THREE.TorusGeometry(0.9, 0.08, 8, 24), ringMat);
+          ring.rotation.x = Math.PI / 2;
+          group.add(can, ring);
+        }
+
+        group.position.set(midPoint.x, 1.4, midPoint.z);
+        this.scene.add(group);
+        this.nitroPickups.push({
+          mesh: group,
+          type: cp.type,
+          active: true,
+          baseY: 1.4
+        });
+      }
+    });
+
+    this.buildBranchingRoutes();
+  }
+
+  buildBranchingRoutes() {
+    // 1. High-Altitude Elevated Skybridge Shortcut (Across Middle Waypoints)
+    if (this.waypoints.length > 8) {
+      const p1 = this.waypoints[3] || this.waypoints[2];
+      const p2 = this.waypoints[6] || this.waypoints[5];
+      
+      const bridgeCurve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(p1.x, 0.4, p1.z),
+        new THREE.Vector3((p1.x + p2.x) * 0.5 + 15, 9.5, (p1.z + p2.z) * 0.5),
+        new THREE.Vector3(p2.x, 0.4, p2.z)
+      ]);
+
+      const bridgePoints = bridgeCurve.getPoints(40);
+      const bridgeGeo = new THREE.BufferGeometry();
+      const bPositions = [];
+      const bNormals = [];
+      const bUvs = [];
+      const bHalfW = 7.0;
+
+      for (let i = 0; i <= 40; i++) {
+        const pt = bridgePoints[i % 40];
+        const nextPt = bridgePoints[Math.min(39, i + 1)];
+        const tangent = new THREE.Vector3().subVectors(nextPt, pt).normalize();
+        const right = new THREE.Vector3().crossVectors(tangent, new THREE.Vector3(0, 1, 0)).normalize();
+
+        const leftPos = new THREE.Vector3().copy(pt).addScaledVector(right, -bHalfW);
+        const rightPos = new THREE.Vector3().copy(pt).addScaledVector(right, bHalfW);
+
+        bPositions.push(leftPos.x, leftPos.y, leftPos.z);
+        bPositions.push(rightPos.x, rightPos.y, rightPos.z);
+
+        bNormals.push(0, 1, 0, 0, 1, 0);
+        bUvs.push(0, i / 40, 1, i / 40);
+      }
+
+      const bIndices = [];
+      for (let i = 0; i < 40; i++) {
+        const row1 = i * 2;
+        const row2 = (i + 1) * 2;
+        bIndices.push(row1, row1 + 1, row2);
+        bIndices.push(row1 + 1, row2 + 1, row2);
+      }
+
+      bridgeGeo.setAttribute('position', new THREE.Float32BufferAttribute(bPositions, 3));
+      bridgeGeo.setAttribute('normal', new THREE.Float32BufferAttribute(bNormals, 3));
+      bridgeGeo.setAttribute('uv', new THREE.Float32BufferAttribute(bUvs, 2));
+      bridgeGeo.setIndex(bIndices);
+
+      const bridgeMat = new THREE.MeshStandardMaterial({
+        color: 0x0f172a,
+        metalness: 0.9,
+        roughness: 0.2
+      });
+
+      const bridgeMesh = new THREE.Mesh(bridgeGeo, bridgeMat);
+      this.scene.add(bridgeMesh);
+      this.environmentMeshes.push(bridgeMesh);
+
+      // Support Concrete Pillars
+      [0.25, 0.5, 0.75].forEach(t => {
+        const pillarPos = bridgeCurve.getPointAt(t);
+        const pillarGeo = new THREE.CylinderGeometry(1.2, 1.6, pillarPos.y, 12);
+        const pillarMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.4 });
+        const pillar = new THREE.Mesh(pillarGeo, pillarMat);
+        pillar.position.set(pillarPos.x, pillarPos.y / 2, pillarPos.z);
+        this.scene.add(pillar);
+        this.environmentMeshes.push(pillar);
+
+        // Neon Light Ring around pillar
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(1.5, 0.15, 8, 16), new THREE.MeshBasicMaterial({ color: 0x00e5ff }));
+        ring.rotation.x = Math.PI / 2;
+        ring.position.set(pillarPos.x, pillarPos.y * 0.75, pillarPos.z);
+        this.scene.add(ring);
+        this.environmentMeshes.push(ring);
+      });
+
+      // Airborne Shockwave Nitro Cylinder on Apex of Skybridge
+      const apexPt = bridgeCurve.getPointAt(0.5);
+      const apexGroup = new THREE.Group();
+      const shockCan = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.65, 0.65, 2.2, 16),
+        new THREE.MeshStandardMaterial({ color: 0xd946ef, emissive: 0xd946ef, emissiveIntensity: 1.0, metalness: 0.95 })
+      );
+      const shockRing = new THREE.Mesh(
+        new THREE.TorusGeometry(1.1, 0.1, 8, 24),
+        new THREE.MeshBasicMaterial({ color: 0xffffff })
+      );
+      shockRing.rotation.x = Math.PI / 2;
+      apexGroup.add(shockCan, shockRing);
+      apexGroup.position.set(apexPt.x, apexPt.y + 1.8, apexPt.z);
+      this.scene.add(apexGroup);
+      this.nitroPickups.push({
+        mesh: apexGroup,
+        type: 'shockwave_nitro',
+        active: true,
+        baseY: apexPt.y + 1.8
+      });
+    }
+  }
+
   getDistanceToCenterline(pos) {
     if (!this.trackCurve) return 0;
     let minDistSq = Infinity;
@@ -532,6 +828,14 @@ class RacingTrack {
     const pulse = 0.6 + 0.4 * Math.sin(time * 6);
     this.animatedChevrons.forEach(c => {
       c.material.opacity = pulse;
+    });
+
+    // Animate Collectibles rotation and bobbing
+    this.nitroPickups.forEach(np => {
+      if (np.active && np.mesh) {
+        np.mesh.rotation.y += 0.04;
+        np.mesh.position.y = np.baseY + Math.sin(time * 4) * 0.35;
+      }
     });
   }
 }

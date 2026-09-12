@@ -1,4 +1,4 @@
-﻿// Smart Autonomous AI Racer Controller for Single Player Practice & Quick Play
+// Smart Autonomous AI Racer Controller for Single Player Practice & Quick Play
 class AICarController {
   constructor(game, car, botConfig = {}) {
     this.game = game;
@@ -14,10 +14,53 @@ class AICarController {
     this.nitroTimer = 0;
     this.isNitroReady = true;
     this.recoveryTimer = 0;
+    this.tumbleAngle = 0;
+  }
+
+  knockdown(impactVelocity) {
+    if (this.car.isWrecked) return;
+    this.car.isWrecked = true;
+    this.car.speed = 0;
+    this.recoveryTimer = 3.0; // 3 second knockdown duration
+    this.tumbleAngle = 0;
+
+    // Emit crash effects
+    this.car.emitCrashSparks(this.car.position);
+    this.car.createWreckFire();
+
+    // Sound effect
+    if (this.car.playCrashSound) {
+      this.car.playCrashSound();
+    }
   }
 
   update(delta) {
-    if (!this.car || this.car.isWrecked || !this.game.track || !this.game.track.waypoints) return;
+    if (!this.car || !this.game.track || !this.game.track.waypoints) return;
+
+    // Handle Knockdown & Wreck Recovery
+    if (this.car.isWrecked) {
+      this.recoveryTimer -= delta;
+      this.car.updateParticles(delta);
+
+      // Tumble Spin Animation
+      this.tumbleAngle += delta * 8;
+      this.car.bodyGroup.rotation.z = Math.min(Math.PI, this.tumbleAngle);
+      this.car.bodyGroup.rotation.x = Math.sin(this.tumbleAngle) * 0.4;
+      this.car.position.y = 0.46 + Math.max(0, Math.sin(this.tumbleAngle * 0.5) * 1.5);
+      this.car.mesh.position.copy(this.car.position);
+
+      if (this.recoveryTimer <= 0) {
+        // Respawn AI on track
+        this.car.repair();
+        this.car.bodyGroup.rotation.set(0, 0, 0);
+        this.car.position.y = 0.46;
+        const targetWp = this.game.track.waypoints[this.currentWaypointIdx] || this.game.track.waypoints[0];
+        const nextWp = this.game.track.waypoints[(this.currentWaypointIdx + 1) % this.game.track.waypoints.length];
+        const tangent = new THREE.Vector3().subVectors(nextWp, targetWp).normalize();
+        this.resetToTrack(targetWp, Math.atan2(tangent.x, tangent.z));
+      }
+      return;
+    }
 
     const waypoints = this.game.track.waypoints;
     const carPos = this.car.position;

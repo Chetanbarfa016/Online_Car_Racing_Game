@@ -212,7 +212,7 @@ body, html {
   letter-spacing: 1px;
 }
 
-/* Model Cards Grid */
+/* Model Cards Grid (5 Cars) */
 .model-cards-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -220,44 +220,86 @@ body, html {
 }
 
 .model-card {
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 10px 8px;
-  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 6px;
+  border-radius: 12px;
   text-align: left;
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 5px;
   transition: all 0.2s ease;
+  overflow: hidden;
 }
 
 .model-card:hover {
-  border-color: rgba(0, 229, 255, 0.5);
+  border-color: rgba(0, 229, 255, 0.6);
   transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 229, 255, 0.2);
 }
 
 .model-card.active {
   background: linear-gradient(135deg, rgba(255, 42, 95, 0.25), rgba(255, 107, 139, 0.35));
   border-color: #ff2a5f;
-  box-shadow: 0 0 15px rgba(255, 42, 95, 0.4);
+  box-shadow: 0 0 16px rgba(255, 42, 95, 0.5);
 }
 
-.m-badge {
-  font-size: 0.6rem;
+.card-img-wrap {
+  position: relative;
+  width: 100%;
+  height: 58px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #090d16;
+}
+
+.car-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.model-card:hover .car-card-img {
+  transform: scale(1.08);
+}
+
+.card-img-wrap .m-badge {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 234, 0, 0.4);
+  font-size: 0.55rem;
   font-weight: 900;
   color: #ffea00;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
+}
+
+.card-info-wrap {
+  display: flex;
+  flex-direction: column;
+  padding: 0 2px;
 }
 
 .m-name {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .m-desc {
-  font-size: 0.65rem;
+  font-size: 0.62rem;
+  color: #94a3b8;
+  font-family: 'Rajdhani', sans-serif;
+}
   color: #8fa0b5;
   font-family: 'Rajdhani', sans-serif;
 }
@@ -1093,59 +1135,85 @@ body, html {
   gap: 12px;
 }
 
-/* Interstitial Ad Modal (Playgama / Google Ads) */
+/* Fixed Fullscreen Centered Overlay (Ads / Countdown) */
+.overlay-center {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(4, 6, 15, 0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  z-index: 10000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: auto;
+}
+
+/* Interstitial Ad Modal (Playgama / Google Ads Monetization) */
 .ad-card {
   width: 92%;
-  max-width: 520px;
-  background: rgba(10, 15, 28, 0.96);
-  border: 1px solid rgba(0, 229, 255, 0.4);
-  box-shadow: 0 0 30px rgba(0, 229, 255, 0.3);
-  padding: 20px;
-  border-radius: 16px;
+  max-width: 560px;
+  background: rgba(10, 15, 28, 0.98);
+  border: 1px solid rgba(0, 229, 255, 0.45);
+  box-shadow: 0 0 45px rgba(0, 229, 255, 0.3), 0 20px 50px rgba(0, 0, 0, 0.9);
+  padding: 24px;
+  border-radius: 18px;
   text-align: center;
+  position: relative;
+  overflow: hidden;
 }
 
 .ad-badge-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 10px;
-  margin-bottom: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  padding-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .ad-tag {
-  font-size: 0.65rem;
-  font-weight: 800;
+  font-size: 0.72rem;
+  font-weight: 900;
   color: #00e5ff;
   letter-spacing: 1.5px;
 }
 
 .ad-timer {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: #ffea00;
-  font-weight: 700;
+  font-weight: 800;
+  background: rgba(255, 234, 0, 0.15);
+  border: 1px solid rgba(255, 234, 0, 0.4);
+  padding: 3px 10px;
+  border-radius: 20px;
 }
 
 .ad-media-container {
-  min-height: 180px;
-  border-radius: 12px;
+  min-height: 200px;
+  border-radius: 14px;
   overflow: hidden;
   position: relative;
   background: #020617;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 12px;
 }
 
 .ad-sponsor-banner {
   width: 100%;
-  padding: 25px 15px;
+  padding: 22px 18px;
   background: linear-gradient(135deg, #1e1b4b, #0f172a);
-  border: 1px solid rgba(255, 234, 0, 0.3);
-  border-radius: 10px;
+  border: 1px solid rgba(255, 234, 0, 0.35);
+  border-radius: 12px;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
 }
 
 .ad-sponsor-glow {
@@ -1164,35 +1232,73 @@ body, html {
 }
 
 .ad-brand-icon {
-  font-size: 2.2rem;
+  font-size: 2.4rem;
 }
 
 .ad-sponsor-content h3 {
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   color: #ffea00;
-  margin: 6px 0;
+  margin: 6px 0 4px 0;
   letter-spacing: 1px;
+  font-weight: 900;
 }
 
 .ad-sponsor-content p {
-  font-size: 0.8rem;
-  color: #94a3b8;
-  margin-bottom: 12px;
+  font-size: 0.82rem;
+  color: #cbd5e1;
+  margin-bottom: 14px;
   font-family: 'Rajdhani', sans-serif;
+  line-height: 1.3;
 }
 
 .btn-ad-cta {
+  display: inline-block;
   background: linear-gradient(135deg, #ffea00, #ff9100);
   color: #000;
-  font-weight: 800;
-  padding: 6px 20px;
+  font-weight: 900;
+  font-size: 0.85rem;
+  padding: 8px 26px;
+  text-decoration: none;
+  border-radius: 30px;
+  box-shadow: 0 0 20px rgba(255, 234, 0, 0.5);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-ad-cta:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 30px rgba(255, 234, 0, 0.8);
+}
+
+.ad-footer-row {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
 }
 
 .btn-skip {
   background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   color: #fff;
-  font-size: 0.8rem;
-  padding: 8px 24px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  padding: 8px 28px;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-skip:hover {
+  background: #00e5ff;
+  color: #000;
+  border-color: #00e5ff;
+  box-shadow: 0 0 15px rgba(0, 229, 255, 0.6);
+}
+
+.btn-accent {
+  background: linear-gradient(135deg, #ffea00, #ff9100);
+  color: #000;
+  font-weight: 800;
+  border: none;
 }
 
 /* Enhanced Winner Podium */
@@ -1542,5 +1648,33 @@ body, html {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+/* Asphalt Nitro Stunt Popup Banner */
+.stunt-banner {
+  position: fixed;
+  top: 20%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.5);
+  background: linear-gradient(135deg, rgba(255, 42, 95, 0.92), rgba(0, 229, 255, 0.92));
+  color: #ffffff;
+  padding: 14px 36px;
+  border-radius: 40px;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900;
+  font-size: 1.5rem;
+  letter-spacing: 3px;
+  text-shadow: 0 0 15px rgba(255, 255, 255, 0.9), 0 0 30px rgba(0, 229, 255, 0.8);
+  box-shadow: 0 0 40px rgba(0, 229, 255, 0.6), 0 0 80px rgba(255, 42, 95, 0.4);
+  border: 2px solid #ffffff;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 200;
+  transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.stunt-banner.active {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1.15);
 }
 

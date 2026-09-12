@@ -10,6 +10,8 @@
   <link rel="stylesheet" href="./css/style.css" />
   <!-- Three.js Library -->
   <script src="./js/three.min.js"></script>
+  <!-- Google AdSense / H5 Ads Integration -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-0000000000000000" crossorigin="anonymous"></script>
   <!-- Playgama Bridge SDK Official -->
   <script src="https://bridge.playgama.com/v2/stable/playgama-bridge.js"></script>
   <!-- Socket.io Client -->
@@ -44,29 +46,59 @@
         <span class="sec-number">01</span> GARAGE & CUSTOMIZE
       </div>
 
-      <!-- Car Model Switcher -->
+      <!-- Car Model Switcher with Real Images -->
       <div class="custom-block">
-        <label class="block-label">SELECT MACHINE</label>
+        <label class="block-label">SELECT MACHINE (5 CARS)</label>
         <div class="model-cards-grid" id="model-buttons">
           <button class="model-card active" data-model="supercar">
-            <span class="m-badge">SUPER</span>
-            <span class="m-name">Phantom GT</span>
-            <span class="m-desc">V10 Twin Turbo</span>
+            <div class="card-img-wrap">
+              <img src="./images/cars/car_orange_gt.jpg" alt="Phantom GT3" class="car-card-img" />
+              <span class="m-badge">GT3</span>
+            </div>
+            <div class="card-info-wrap">
+              <span class="m-name">Phantom GT3</span>
+              <span class="m-desc">V10 Twin Turbo</span>
+            </div>
           </button>
-          <button class="model-card" data-model="muscle">
-            <span class="m-badge">MUSCLE</span>
-            <span class="m-name">V8 Thunder</span>
-            <span class="m-desc">Supercharged</span>
+          <button class="model-card" data-model="hypercar">
+            <div class="card-img-wrap">
+              <img src="./images/cars/car_yellow_hyper.jpg" alt="Solaris Hyper GT" class="car-card-img" />
+              <span class="m-badge">HYPER</span>
+            </div>
+            <div class="card-info-wrap">
+              <span class="m-name">Solaris Hyper</span>
+              <span class="m-desc">Concept Aero</span>
+            </div>
           </button>
           <button class="model-card" data-model="formula1">
-            <span class="m-badge">F1</span>
-            <span class="m-name">Apex Aero</span>
-            <span class="m-desc">Aero Downforce</span>
+            <div class="card-img-wrap">
+              <img src="./images/cars/car_formula_aero.jpg" alt="Apex F1 Aero" class="car-card-img" />
+              <span class="m-badge">F1</span>
+            </div>
+            <div class="card-info-wrap">
+              <span class="m-name">Apex F1 Aero</span>
+              <span class="m-desc">Downforce Pro</span>
+            </div>
           </button>
-          <button class="model-card" data-model="cybertruck">
-            <span class="m-badge">4X4</span>
-            <span class="m-name">Titan Cyber</span>
-            <span class="m-desc">Armored AWD</span>
+          <button class="model-card" data-model="muscle">
+            <div class="card-img-wrap">
+              <img src="./images/cars/car_blue_touring.jpg" alt="Thunder GT Touring" class="car-card-img" />
+              <span class="m-badge">TOURING</span>
+            </div>
+            <div class="card-info-wrap">
+              <span class="m-name">Thunder GT</span>
+              <span class="m-desc">V8 Supercharged</span>
+            </div>
+          </button>
+          <button class="model-card" data-model="speedster">
+            <div class="card-img-wrap">
+              <img src="./images/cars/car_f1_speedster.jpg" alt="Quantum Speedster" class="car-card-img" />
+              <span class="m-badge">SPEED</span>
+            </div>
+            <div class="card-info-wrap">
+              <span class="m-name">Quantum F1</span>
+              <span class="m-desc">Mach 2 Speedster</span>
+            </div>
           </button>
         </div>
       </div>
@@ -263,8 +295,9 @@
         <span id="hud-timer-text" class="hud-value">00:00.0</span>
       </div>
       <div class="hud-card hud-lifeline">
-        <span class="hud-label">ARMOR / LIFELINE</span>
+        <span class="hud-label">ARMOR / HEALTH (5 HITS)</span>
         <div id="hud-lifelines" class="lifelines-hearts">
+          <span class="heart-icon active">❤️</span>
           <span class="heart-icon active">❤️</span>
           <span class="heart-icon active">❤️</span>
           <span class="heart-icon active">❤️</span>
@@ -356,42 +389,45 @@
   <div id="wrecked-overlay" class="overlay" style="display: none;">
     <div class="wrecked-box glass-card">
       <div class="wreck-icon">💥</div>
-      <h1 class="wreck-title">CAR WRECKED!</h1>
-      <p class="wreck-subtitle">Fatal collision damage sustained! Lifelines exhausted (4/4 Hits).</p>
+      <h1 class="wreck-title">CAR CRASHED!</h1>
+      <p class="wreck-subtitle">Deewar se 5 baar takrane par car crash ho gayi hai! 5/5 Hits sustained.</p>
       <div class="wreck-actions">
-        <button id="btn-respawn-repair" class="btn btn-hero btn-pulse">🔧 REPAIR & RESPAWN</button>
+        <button id="btn-respawn-repair" class="btn btn-hero btn-pulse">🔧 REPAIR & RESPAWN (WAPAS CHALEN)</button>
+        <button id="btn-watch-ad-respawn" class="btn btn-accent">📺 WATCH AD & FREE RESPAWN</button>
         <button id="btn-wreck-garage" class="btn btn-secondary">BACK TO SHOWROOM</button>
       </div>
     </div>
   </div>
 
-  <!-- INTERSTITIAL AD OVERLAY (Playgama & Google Ads) -->
+  <!-- INTERSTITIAL AD OVERLAY (Playgama & Google Ads Monetization) -->
   <div id="ad-overlay" class="overlay-center" style="display: none;">
     <div class="ad-card glass-card">
       <div class="ad-badge-row">
-        <span class="ad-tag">SPONSORED ADVERTISEMENT</span>
-        <span id="ad-countdown" class="ad-timer">Ad closes in 3s</span>
+        <span class="ad-tag">💰 SPONSORED ADVERTISEMENT</span>
+        <span id="ad-countdown" class="ad-timer">Ad closes in 5s</span>
       </div>
       <div class="ad-media-container" id="ad-media-slot">
-        <!-- Google AdSense / H5 Ads Slot -->
+        <!-- Google AdSense / H5 Ads Container -->
         <ins class="adsbygoogle"
-             style="display:block; width:100%; height:180px;"
+             style="display:block; width:100%; min-height:160px;"
              data-ad-client="ca-pub-0000000000000000"
              data-ad-slot="1234567890"
              data-ad-format="auto"
              data-full-width-responsive="true"></ins>
-        <!-- Dynamic Racing Sponsor Showcase -->
-        <div class="ad-sponsor-banner">
+        <!-- High-Converting Dynamic Gaming Sponsor Banner -->
+        <div class="ad-sponsor-banner" id="ad-sponsor-box">
           <div class="ad-sponsor-glow"></div>
           <div class="ad-sponsor-content">
-            <span class="ad-brand-icon">⚡</span>
-            <h3>TURBO NITRO ENERGY</h3>
-            <p>Unleash Maximum Horsepower on Every Track!</p>
-            <button class="btn btn-pill btn-ad-cta">Install Now</button>
+            <span class="ad-brand-icon">🏎️⚡</span>
+            <h3 id="ad-brand-title">TURBO RACER PRO: NITRO PASS</h3>
+            <p id="ad-brand-desc">Unlock 50+ Custom Supercars, Rare Paint Decals & Maximum Boost!</p>
+            <a href="https://playgama.com" target="_blank" rel="noopener noreferrer" class="btn btn-pill btn-ad-cta" id="ad-cta-link">🚀 PLAY / INSTALL NOW</a>
           </div>
         </div>
       </div>
-      <button id="btn-skip-ad" class="btn btn-pill btn-skip" style="display: none;">SKIP AD ⏭️</button>
+      <div class="ad-footer-row">
+        <button id="btn-skip-ad" class="btn btn-pill btn-skip" style="display: none;">SKIP AD ⏭️</button>
+      </div>
     </div>
   </div>
 
