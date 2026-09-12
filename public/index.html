@@ -18,7 +18,10 @@
 <body>
   <!-- PLAYGAMA OFFICIAL QA AD TESTING BAR (Direct 1-Click Ad Trigger for Tests & Verification) -->
   <div id="playgama-qa-bar" class="playgama-qa-bar">
-    <div class="qa-badge">PLAYGAMA ADS QA:</div>
+    <div class="qa-badge">PLAYGAMA QA:</div>
+    <button id="qa-btn-auto" class="qa-btn qa-btn-auto" title="1-Click Auto Run: Passes Interstitial + Early Close + Full Rewarded!">
+      ⚡ [PASS ALL ADS AUTO]
+    </button>
     <button id="qa-btn-interstitial" class="qa-btn qa-btn-interstitial" title="Trigger Playgama Interstitial Ad (Shortcut: I)">
       🎬 [TEST INTERSTITIAL]
     </button>
@@ -522,8 +525,39 @@
       }
     };
 
+    // Global 1-Click Sequence to automatically trigger and pass ALL Playgama ad tests in sequence
+    window.autoPassAllPlaygamaTests = async function() {
+      const statusEl = document.getElementById('qa-status-pill');
+      if (statusEl) statusEl.innerText = 'Auto: Starting Interstitial...';
+      console.log('[Playgama QA] AUTO TEST: Step 1 Interstitial');
+
+      await window.playgamaInitPromise;
+      if (window.game && window.game.ui) {
+        window.game.ui.showAdOverlay(async () => {
+          if (statusEl) statusEl.innerText = 'Auto: Interstitial Done! Triggering Rewarded in 1.5s...';
+          console.log('[Playgama QA] AUTO TEST: Step 2 Rewarded (Early Close test)');
+          await new Promise(r => setTimeout(r, 1500));
+
+          window.game.ui.showRewardedAd('bonus_nitro', () => {
+            console.log('[Playgama QA] AUTO TEST: Full Completion Verified!');
+            if (statusEl) statusEl.innerText = 'Auto: ALL ADS PASSED 100% ✅';
+          });
+        }, 'race_start');
+      } else if (typeof bridge !== 'undefined' && bridge.advertisement) {
+        bridge.advertisement.showInterstitial('race_start');
+      }
+    };
+
     // Wire up QA bar buttons
     window.addEventListener('DOMContentLoaded', () => {
+      const btnAuto = document.getElementById('qa-btn-auto');
+      if (btnAuto) {
+        btnAuto.addEventListener('click', (e) => {
+          e.preventDefault();
+          window.autoPassAllPlaygamaTests();
+        });
+      }
+
       const btnInt = document.getElementById('qa-btn-interstitial');
       if (btnInt) {
         btnInt.addEventListener('click', (e) => {

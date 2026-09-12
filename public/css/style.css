@@ -1790,6 +1790,13 @@ body, html {
   box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
 }
 
+.qa-btn-auto {
+  background: linear-gradient(135deg, #10b981, #059669);
+  border-color: #34d399;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.5);
+  animation: pulse-border 2s infinite ease-in-out;
+}
+
 .qa-status-pill {
   color: #10b981;
   font-size: 0.8rem;

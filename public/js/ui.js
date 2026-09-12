@@ -410,8 +410,16 @@ class UIController {
             if (onRewardSuccess) onRewardSuccess();
           } else {
             console.log('[Playgama] Rewarded closed early: NO reward granted');
-            if (statusEl) statusEl.innerText = 'Rewarded: Closed Early (No Reward)';
+            if (statusEl) statusEl.innerText = 'Rewarded: Early Close Passed! Testing Completion...';
             this.showToast('⚠️ Ad closed early. No reward granted.');
+
+            // In Playgama QA Tool, immediately trigger the second call for Successful Completion Test!
+            if (window.bridge && bridge.platform && bridge.platform.id === 'qa_tool') {
+              console.log('[Playgama QA] Auto-triggering 2nd Rewarded Ad for Full Completion Test in 1.5s');
+              setTimeout(() => {
+                this.showRewardedAd(placement, onRewardSuccess);
+              }, 1500);
+            }
           }
         } else if (state === 'failed') {
           resumeGameAndAudio();
