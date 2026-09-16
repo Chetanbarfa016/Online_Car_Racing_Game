@@ -1,6 +1,14 @@
-/* =================================================================
-   AAA CYBERPUNK ESPORTS RACING UI / THEME
-   ================================================================= */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800;900&family=Rajdhani:wght@500;600;700&display=swap');
+
+:root {
+  --font-display: 'Orbitron', -apple-system, sans-serif;
+  --font-body: 'Rajdhani', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --color-neon-blue: #00e5ff;
+  --color-neon-pink: #ff2a5f;
+  --color-neon-gold: #ffea00;
+  --color-neon-green: #00e676;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -15,8 +23,13 @@ body, html {
   height: 100%;
   overflow: hidden;
   background-color: #04060d;
-  font-family: 'Orbitron', 'Rajdhani', sans-serif;
+  font-family: var(--font-body);
+  font-weight: 600;
+  letter-spacing: 0.3px;
   color: #ffffff;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 #game-container {
@@ -1050,38 +1063,278 @@ body, html {
 }
 
 .podium-box {
-  width: 90%;
-  max-width: 500px;
+  width: 92%;
+  max-width: 680px;
   margin: auto;
-  margin-top: 100px;
-  padding: 26px;
+  padding: 24px 28px;
   text-align: center;
   pointer-events: auto;
+  border: 1px solid rgba(0, 229, 255, 0.4);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9), 0 0 35px rgba(0, 229, 255, 0.2);
+}
+
+.podium-header-badge {
+  display: inline-block;
+  background: rgba(0, 229, 255, 0.15);
+  border: 1px solid rgba(0, 229, 255, 0.6);
+  color: #00e5ff;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  padding: 5px 16px;
+  border-radius: 20px;
+  margin-bottom: 12px;
+  text-transform: uppercase;
 }
 
 .trophy-title {
   color: #ffea00;
-  font-size: 1.8rem;
-  margin-bottom: 16px;
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  font-weight: 900;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+  text-shadow: 0 0 20px rgba(255, 234, 0, 0.6);
 }
 
-.winner-list {
+.podium-subtitle {
+  color: #94a3b8;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 18px;
+}
+
+/* 4-Card Telemetry Highlight Grid */
+.stats-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.stat-card {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 10px 6px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-bottom: 20px;
+  align-items: center;
+  transition: transform 0.2s ease, border-color 0.2s ease;
 }
 
-/* Lifeline / Armor HUD Hearts */
+.stat-card.highlight {
+  border-color: rgba(255, 234, 0, 0.6);
+  background: linear-gradient(135deg, rgba(255, 234, 0, 0.15), rgba(15, 23, 42, 0.95));
+  box-shadow: 0 0 16px rgba(255, 234, 0, 0.2);
+}
+
+.stat-card-icon {
+  font-size: 1.3rem;
+  margin-bottom: 3px;
+}
+
+.stat-card-val {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+}
+
+.stat-card-val small {
+  font-size: 0.65rem;
+  color: #94a3b8;
+}
+
+.stat-card-lbl {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.8px;
+  margin-top: 2px;
+}
+
+/* Full Standings Points Table */
+.podium-table-wrap {
+  max-height: 220px;
+  overflow-y: auto;
+  border-radius: 10px;
+  background: rgba(6, 10, 20, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 18px;
+}
+
+.podium-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.podium-table thead tr {
+  background: rgba(0, 229, 255, 0.12);
+  border-bottom: 1px solid rgba(0, 229, 255, 0.3);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.podium-table th {
+  padding: 8px 12px;
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #00e5ff;
+}
+
+.podium-table td {
+  padding: 9px 12px;
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.podium-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.podium-row.player-row {
+  background: rgba(0, 229, 255, 0.09);
+  border-left: 3px solid #00e5ff;
+}
+
+.pos-badge {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.racer-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.racer-name {
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.badge-you {
+  display: inline-block;
+  background: #00e5ff;
+  color: #04060d;
+  font-family: var(--font-display);
+  font-size: 0.6rem;
+  font-weight: 900;
+  padding: 2px 5px;
+  border-radius: 4px;
+  margin-left: 5px;
+}
+
+.machine-tag {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+
+.col-time {
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+.damage-tag {
+  display: inline-block;
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 5px;
+}
+
+.damage-tag.dmg-low {
+  background: rgba(0, 230, 118, 0.15);
+  color: #00e676;
+  border: 1px solid rgba(0, 230, 118, 0.3);
+}
+
+.damage-tag.dmg-med {
+  background: rgba(255, 234, 0, 0.15);
+  color: #ffea00;
+  border: 1px solid rgba(255, 234, 0, 0.3);
+}
+
+.damage-tag.dmg-high {
+  background: rgba(255, 42, 95, 0.2);
+  color: #ff2a5f;
+  border: 1px solid rgba(255, 42, 95, 0.35);
+}
+
+.points-val {
+  font-family: var(--font-display);
+  font-weight: 800;
+  color: #ffea00;
+  font-size: 0.85rem;
+}
+
+.podium-actions {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+/* Wrecked Modal Additions */
+.wreck-telemetry-row {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin: 12px 0 18px 0;
+  flex-wrap: wrap;
+}
+
+.wreck-chip {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 42, 95, 0.4);
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+}
+
+.wreck-chip .chip-lbl {
+  color: #94a3b8;
+  margin-right: 6px;
+  font-weight: 600;
+}
+
+.wreck-chip .chip-val {
+  color: #ff2a5f;
+  font-family: var(--font-display);
+  font-weight: 800;
+}
+
+/* Lifeline / Armor HUD 8-Hit System */
 .hud-lifeline {
   border-color: rgba(255, 42, 95, 0.4);
+  min-width: 140px;
 }
 
 .lifelines-hearts {
   display: flex;
-  gap: 4px;
+  gap: 3px;
   align-items: center;
-  font-size: 1.1rem;
+  font-size: 0.95rem;
 }
 
 .heart-icon {
@@ -1090,8 +1343,25 @@ body, html {
 }
 
 .heart-icon.lost {
-  filter: grayscale(1) opacity(0.25);
-  transform: scale(0.85);
+  filter: grayscale(1) opacity(0.2);
+  transform: scale(0.8);
+}
+
+.hud-armor-bar-bg {
+  width: 100%;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 5px;
+}
+
+.hud-armor-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00e676, #00e5ff);
+  border-radius: 4px;
+  transition: width 0.3s ease, background 0.3s ease;
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.6);
 }
 
 /* Damage Screen Flash / Vignette */

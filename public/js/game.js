@@ -624,6 +624,20 @@ class Game {
       this.localCar.mesh.position.copy(this.localCar.position);
       this.localCar.speed = Math.max(35, this.localCar.speed * 0.92);
       this.localCar.emitCrashSparks(carPos);
+
+      if (this.localCar.damageCooldown <= 0) {
+        this.localCar.takeDamage(1, carPos);
+        if (this.ui) {
+          this.ui.updateLifelines(this.localCar.lives, this.localCar.maxLives);
+          this.ui.flashDamageEffect();
+          const hits = this.localCar.maxLives - this.localCar.lives;
+          const powerLoss = Math.round((hits / this.localCar.maxLives) * 35);
+          this.ui.showToast(`💥 CRASH! Power -${powerLoss}% [${this.localCar.lives}/8 LIVES]`);
+        }
+        if (this.localCar.lives <= 0) {
+          this.triggerWreckedScreen();
+        }
+      }
       return;
     }
 
@@ -643,9 +657,16 @@ class Game {
         this.localCar.mesh.position.copy(this.localCar.position);
 
         if (this.localCar.damageCooldown <= 0) {
-          this.localCar.damageCooldown = 0.35;
-          if (this.localCar.playCrashSound) {
-            this.localCar.playCrashSound();
+          this.localCar.takeDamage(1, carPos);
+          if (this.ui) {
+            this.ui.updateLifelines(this.localCar.lives, this.localCar.maxLives);
+            this.ui.flashDamageEffect();
+            const hits = this.localCar.maxLives - this.localCar.lives;
+            const powerLoss = Math.round((hits / this.localCar.maxLives) * 35);
+            this.ui.showToast(`⚠️ WALL CONTACT! Power -${powerLoss}% [${this.localCar.lives}/8 LIVES]`);
+          }
+          if (this.localCar.lives <= 0) {
+            this.triggerWreckedScreen();
           }
         }
       }
@@ -689,6 +710,64 @@ class Game {
     });
   }
 
+  formatRaceTime(sec) {
+    if (isNaN(sec) || sec < 0) sec = 0;
+    const mins = Math.floor(sec / 60);
+    const secs = Math.floor(sec % 60);
+    const ms = Math.floor((sec % 1) * 100);
+    return `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}.${ms < 10 ? '0' : ''}${ms}`;
+  }
+
+  triggerWreckedScreen() {
+    this.gameState = 'WRECKED';
+    this.localCar.isWrecked = true;
+    this.localCar.speed = 0;
+    this.localCar.velocity.set(0, 0, 0);
+    this.localCar.createWreckFire();
+
+    const elapsed = this.raceStartTime ? (performance.now() - this.raceStartTime) / 1000 : 0;
+    const timeStr = this.formatRaceTime(elapsed);
+    const hitsTaken = this.localCar.collisionHits || (this.localCar.maxLives - this.localCar.lives) || 8;
+
+    if (this.ui) {
+      this.ui.showWreckedOverlay({
+        hits: hitsTaken,
+        maxHits: this.localCar.maxLives,
+        time: timeStr,
+        damagePercent: 100
+      });
+    }
+  }
+
+  restartRace() {
+    this.gameState = 'COUNTDOWN';
+    if (this.localCar) {
+      this.localCar.repair();
+      this.localCar.currentLap = 1;
+      this.localCar.currentCheckpoint = 0;
+      this.localCar.finished = false;
+      this.localCar.speed = 0;
+      this.localCar.velocity.set(0, 0, 0);
+      this.localCar.position.set(0, 0.46, 0);
+      this.localCar.rotation.set(0, 0, 0);
+      this.localCar.mesh.position.copy(this.localCar.position);
+      this.localCar.mesh.rotation.set(0, 0, 0);
+      this.localCar.topSpeedRecord = 0;
+    }
+    this.clearFireworks();
+    this.spawnAIBots();
+    this.startCountdown(3);
+  }
+
+  clearFireworks() {
+    if (this.fireworks && this.fireworks.length > 0) {
+      this.fireworks.forEach(fw => {
+        if (fw.system) this.scene.remove(fw.system);
+      });
+      this.fireworks = [];
+    }
+  }
+
   checkLapProgress() {
     if (!this.localCar || this.gameState !== 'RACING' || this.localCar.finished) return;
 
@@ -703,20 +782,22 @@ class Game {
 
       if (nextCpIdx === 0) {
         this.localCar.currentLap++;
-        this.ui.showToast('🏁 LAP ' + (this.localCar.currentLap - 1) + ' COMPLETED!');
+        this.ui.showToast('🏁 ROUND 1 COMPLETED!');
 
-        if (this.localCar.currentLap > 3) {
+        // Single round completed: trigger ad -> Game Over / Results Screen with Points Table
+        if (this.localCar.currentLap > 1) {
           this.localCar.finished = true;
+          this.gameState = 'FINISHED';
           const totalTime = (performance.now() - this.raceStartTime) / 1000;
           this.network.sendRaceFinished(totalTime);
           this.spawnFireworks();
 
-          // Trigger Post-Race Interstitial Ad before showing Podium
+          // Show Post-Round Interstitial Ad before revealing Final Results
           setTimeout(() => {
             this.showInterstitialAd(() => {
               this.showPodiumResults();
             }, 'race_finished');
-          }, 1200);
+          }, 800);
         }
       }
 
@@ -725,45 +806,83 @@ class Game {
   }
 
   showPodiumResults() {
+    const totalTimeSec = Math.max(1, (performance.now() - this.raceStartTime) / 1000);
+    const timeFormatted = this.formatRaceTime(totalTimeSec);
+    const hitsTaken = this.localCar.collisionHits || (this.localCar.maxLives - this.localCar.lives);
+    const damagePercent = Math.min(100, Math.round((hitsTaken / this.localCar.maxLives) * 100));
+    const topSpeed = Math.round(this.localCar.topSpeedRecord || Math.abs(this.localCar.speed) || 180);
+
+    // Dynamic points calculation
+    const raceScore = Math.max(450, Math.round(2500 - (totalTimeSec * 12) - (hitsTaken * 120) + (topSpeed * 1.5)));
+
+    const playerPerformance = {
+      time: timeFormatted,
+      timeSeconds: totalTimeSec,
+      hits: hitsTaken,
+      maxHits: this.localCar.maxLives,
+      damagePercent: damagePercent,
+      topSpeed: topSpeed,
+      score: raceScore
+    };
+
     const allRacers = [
       {
         name: this.localCar.playerName,
+        isPlayer: true,
         lap: this.localCar.currentLap,
         cp: this.localCar.currentCheckpoint,
         color: this.localCar.color,
         model: this.localCar.carModel,
-        time: ((performance.now() - this.raceStartTime) / 1000).toFixed(2) + 's'
+        time: timeFormatted,
+        timeRaw: totalTimeSec,
+        damageHits: hitsTaken,
+        damagePct: damagePercent,
+        score: raceScore
       }
     ];
 
-    this.aiBots.forEach(bot => {
+    this.aiBots.forEach((bot, bIdx) => {
+      const botTimeSec = totalTimeSec + (bIdx + 1) * 2.2 + (Math.random() * 1.8 - 0.5);
+      const botHits = Math.floor(Math.random() * 4);
+      const botDmg = Math.round((botHits / 8) * 100);
+      const botScore = Math.max(300, Math.round(2400 - (botTimeSec * 12) - (botHits * 100)));
+
       allRacers.push({
         name: bot.name,
+        isPlayer: false,
         lap: bot.car.currentLap,
         cp: bot.car.currentCheckpoint,
         color: bot.car.color,
         model: bot.car.carModel,
-        time: ((performance.now() - this.raceStartTime) / 1000 + Math.random() * 2).toFixed(2) + 's'
+        time: this.formatRaceTime(botTimeSec),
+        timeRaw: botTimeSec,
+        damageHits: botHits,
+        damagePct: botDmg,
+        score: botScore
       });
     });
 
     this.network.remotePlayers.forEach((rcar, id) => {
+      const rTimeSec = totalTimeSec + 1.6 + Math.random() * 2.5;
       allRacers.push({
         name: rcar.playerName || 'Racer',
+        isPlayer: false,
         lap: rcar.currentLap || 1,
         cp: rcar.currentCheckpoint || 0,
         color: rcar.color,
         model: rcar.carModel,
-        time: 'Finished'
+        time: this.formatRaceTime(rTimeSec),
+        timeRaw: rTimeSec,
+        damageHits: 2,
+        damagePct: 25,
+        score: 1650
       });
     });
 
-    allRacers.sort((a, b) => {
-      if (b.lap !== a.lap) return b.lap - a.lap;
-      return b.cp - a.cp;
-    });
+    // Sort by fastest time
+    allRacers.sort((a, b) => a.timeRaw - b.timeRaw);
 
-    this.ui.showPodiumScreen(allRacers);
+    this.ui.showPodiumScreen(allRacers, playerPerformance);
   }
 
   spawnFireworks() {

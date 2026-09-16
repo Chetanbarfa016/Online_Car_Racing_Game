@@ -251,6 +251,21 @@ class UIController {
       });
     }
 
+    // 11b. Restart Race directly from Podium
+    const btnPodiumRestart = document.getElementById('btn-podium-restart');
+    if (btnPodiumRestart) {
+      btnPodiumRestart.addEventListener('click', () => {
+        const podiumOverlay = document.getElementById('podium-overlay');
+        if (podiumOverlay) {
+          podiumOverlay.style.display = 'none';
+          podiumOverlay.classList.remove('active');
+        }
+        if (this.game) {
+          this.game.restartRace();
+        }
+      });
+    }
+
     // 12. Camera Switch Button
     document.getElementById('btn-cam-switch').addEventListener('click', () => {
       this.game.toggleCameraView();
@@ -269,8 +284,9 @@ class UIController {
         if (this.game.localCar) {
           this.game.localCar.repair();
           this.game.resetLocalCar();
+          this.game.gameState = 'RACING';
           this.updateLifelines(this.game.localCar.lives, this.game.localCar.maxLives);
-          this.showToast('🔧 Car Repaired! 5/5 Health Restored!');
+          this.showToast('🔧 Car Repaired! 8/8 Health Restored!');
         }
       });
     }
@@ -284,6 +300,7 @@ class UIController {
           if (this.game.localCar) {
             this.game.localCar.repair();
             this.game.resetLocalCar();
+            this.game.gameState = 'RACING';
             this.updateLifelines(this.game.localCar.lives, this.game.localCar.maxLives);
             this.showToast('✨ Rewarded! Free Full Repair Restored! [AD]');
           }
@@ -327,21 +344,39 @@ class UIController {
     }
   }
 
-  // Update Lifeline / Armor Hearts (❤️❤️❤️❤️❤️)
-  updateLifelines(lives, maxLives = 5) {
+  // Update Lifeline / Armor Hearts & Health Gauge (8 Hits System)
+  updateLifelines(lives, maxLives = 8) {
     const container = document.getElementById('hud-lifelines');
-    if (!container) return;
+    if (container) {
+      const hearts = container.querySelectorAll('.heart-icon');
+      hearts.forEach((h, idx) => {
+        if (idx < lives) {
+          h.classList.remove('lost');
+          h.classList.add('active');
+        } else {
+          h.classList.remove('active');
+          h.classList.add('lost');
+        }
+      });
+    }
 
-    const hearts = container.querySelectorAll('.heart-icon');
-    hearts.forEach((h, idx) => {
-      if (idx < lives) {
-        h.classList.remove('lost');
-        h.classList.add('active');
+    const armorLabel = document.getElementById('hud-armor-label');
+    if (armorLabel) {
+      armorLabel.innerText = `ARMOR / HEALTH (${lives}/${maxLives} HITS)`;
+    }
+
+    const armorFill = document.getElementById('hud-armor-fill');
+    if (armorFill) {
+      const pct = Math.max(0, Math.min(100, (lives / maxLives) * 100));
+      armorFill.style.width = pct + '%';
+      if (pct > 60) {
+        armorFill.style.background = 'linear-gradient(90deg, #00e676, #00e5ff)';
+      } else if (pct > 30) {
+        armorFill.style.background = 'linear-gradient(90deg, #ffea00, #ff9100)';
       } else {
-        h.classList.remove('active');
-        h.classList.add('lost');
+        armorFill.style.background = 'linear-gradient(90deg, #ff1744, #ff5252)';
       }
-    });
+    }
   }
 
   // Screen Damage Glitch Flash Effect
@@ -355,11 +390,18 @@ class UIController {
     }
   }
 
-  showWreckedOverlay() {
+  showWreckedOverlay(stats = null) {
     const overlay = document.getElementById('wrecked-overlay');
-    if (overlay) {
-      overlay.style.display = 'flex';
+    if (!overlay) return;
+
+    if (stats) {
+      const hitsEl = document.getElementById('wreck-stat-hits');
+      if (hitsEl) hitsEl.innerText = `${stats.hits || 8}/${stats.maxHits || 8} HITS (100% CRITICAL)`;
+      const timeEl = document.getElementById('wreck-stat-time');
+      if (timeEl) timeEl.innerText = stats.time || '00:00.0';
     }
+
+    overlay.style.display = 'flex';
   }
 
   // Update UI based on platform support for Rewarded Ads
@@ -1008,21 +1050,97 @@ class UIController {
     }
   }
 
-  // Enhanced Winner Podium Screen with 1st, 2nd, 3rd, 4th Positions & Lap Times
-  showPodiumScreen(allRacers) {
+  // Enhanced Race Finished / Game Over Results Screen with Telemetry & Full Points Table
+  showPodiumScreen(allRacers, playerStats) {
     const overlay = document.getElementById('podium-overlay');
+    if (!overlay) return;
+
+    // 1. Update Telemetry Summary Cards
+    const statsGrid = document.getElementById('podium-stats-grid');
+    if (statsGrid && playerStats) {
+      statsGrid.innerHTML = `
+        <div class="stat-card">
+          <div class="stat-card-icon">⏱️</div>
+          <div class="stat-card-val">${playerStats.time}</div>
+          <div class="stat-card-lbl">COMPLETION TIME</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon">💥</div>
+          <div class="stat-card-val" style="color: ${playerStats.damagePercent > 50 ? '#ff3b5c' : (playerStats.damagePercent > 0 ? '#ffbe0b' : '#00e676')};">${playerStats.hits}/${playerStats.maxHits} (${playerStats.damagePercent}%)</div>
+          <div class="stat-card-lbl">CAR DAMAGE</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon">⚡</div>
+          <div class="stat-card-val">${playerStats.topSpeed} <small>KM/H</small></div>
+          <div class="stat-card-lbl">TOP SPEED</div>
+        </div>
+        <div class="stat-card highlight">
+          <div class="stat-card-icon">🏆</div>
+          <div class="stat-card-val" style="color: #ffea00;">+${playerStats.score.toLocaleString()}</div>
+          <div class="stat-card-lbl">RACE SCORE / PTS</div>
+        </div>
+      `;
+    }
+
+    // 2. Render Full Standings Points Table
+    const tableContainer = document.getElementById('podium-table-container');
     const list = document.getElementById('podium-winners-list');
-    list.innerHTML = '';
 
-    const medals = ['🥇 1ST', '🥈 2ND', '🥉 3RD', '4TH'];
+    if (tableContainer) {
+      const medals = ['🥇', '🥈', '🥉', '#4', '#5', '#6'];
+      let rowsHtml = '';
 
-    allRacers.forEach((r, idx) => {
-      const card = document.createElement('div');
-      card.className = 'winner-card rank-' + (idx + 1);
-      const medalText = medals[idx] || (idx + 1) + 'TH';
-      card.innerHTML = '<span class="w-rank-badge">' + medalText + '</span><div class="w-details"><span class="w-name" style="color:' + (r.color || '#fff') + ';">' + r.name + '</span><span class="w-model">' + (r.model || 'supercar').toUpperCase() + ' MACHINE</span></div><span class="w-time">' + r.time + '</span>';
-      list.appendChild(card);
-    });
+      allRacers.forEach((r, idx) => {
+        const medal = medals[idx] || `#${idx + 1}`;
+        const isPlayer = r.isPlayer;
+        const rowClass = isPlayer ? 'podium-row player-row' : 'podium-row';
+        const carModelName = (r.model || 'supercar').replace('_', ' ').toUpperCase();
+        const hitsText = (r.damageHits !== undefined) ? `${r.damageHits}/8 (${r.damagePct}%)` : (r.damage || '0/8 (0%)');
+        const scoreText = (r.score !== undefined) ? r.score.toLocaleString() + ' PTS' : '1,500 PTS';
+
+        rowsHtml += `
+          <tr class="${rowClass}">
+            <td class="col-pos"><span class="pos-badge pos-${idx + 1}">${medal}</span></td>
+            <td class="col-racer">
+              <span class="racer-dot" style="background: ${r.color || '#00e5ff'};"></span>
+              <span class="racer-name">${r.name}${isPlayer ? ' <span class="badge-you">YOU</span>' : ''}</span>
+            </td>
+            <td class="col-machine"><span class="machine-tag">${carModelName}</span></td>
+            <td class="col-time">${r.time}</td>
+            <td class="col-damage"><span class="damage-tag ${r.damagePct > 50 ? 'dmg-high' : (r.damagePct > 0 ? 'dmg-med' : 'dmg-low')}">${hitsText}</span></td>
+            <td class="col-points"><span class="points-val">+${scoreText}</span></td>
+          </tr>
+        `;
+      });
+
+      tableContainer.innerHTML = `
+        <table class="podium-table">
+          <thead>
+            <tr>
+              <th>POS</th>
+              <th>RACER</th>
+              <th>MACHINE</th>
+              <th>TIME</th>
+              <th>DAMAGE</th>
+              <th>POINTS</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+      `;
+    } else if (list) {
+      list.innerHTML = '';
+      const medals = ['🥇 1ST', '🥈 2ND', '🥉 3RD', '4TH'];
+      allRacers.forEach((r, idx) => {
+        const card = document.createElement('div');
+        card.className = 'winner-card rank-' + (idx + 1);
+        const medalText = medals[idx] || (idx + 1) + 'TH';
+        card.innerHTML = '<span class="w-rank-badge">' + medalText + '</span><div class="w-details"><span class="w-name" style="color:' + (r.color || '#fff') + ';">' + r.name + '</span><span class="w-model">' + (r.model || 'supercar').toUpperCase() + ' MACHINE</span></div><span class="w-time">' + r.time + '</span>';
+        list.appendChild(card);
+      });
+    }
 
     overlay.style.display = 'flex';
   }

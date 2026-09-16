@@ -333,21 +333,27 @@
         <span id="hud-rank-text" class="hud-value">1<small>/1</small></span>
       </div>
       <div class="hud-card hud-lap">
-        <span class="hud-label">LAP</span>
-        <span id="hud-lap-text" class="hud-value">1/3</span>
+        <span class="hud-label">ROUND</span>
+        <span id="hud-lap-text" class="hud-value">1/1</span>
       </div>
       <div class="hud-card hud-time">
         <span class="hud-label">TIME</span>
         <span id="hud-timer-text" class="hud-value">00:00.0</span>
       </div>
       <div class="hud-card hud-lifeline">
-        <span class="hud-label">ARMOR / HEALTH (5 HITS)</span>
+        <span class="hud-label" id="hud-armor-label">ARMOR / HEALTH (8/8 HITS)</span>
         <div id="hud-lifelines" class="lifelines-hearts">
           <span class="heart-icon active">❤️</span>
           <span class="heart-icon active">❤️</span>
           <span class="heart-icon active">❤️</span>
           <span class="heart-icon active">❤️</span>
           <span class="heart-icon active">❤️</span>
+          <span class="heart-icon active">❤️</span>
+          <span class="heart-icon active">❤️</span>
+          <span class="heart-icon active">❤️</span>
+        </div>
+        <div class="hud-armor-bar-bg">
+          <div id="hud-armor-fill" class="hud-armor-fill" style="width: 100%;"></div>
         </div>
       </div>
     </div>
@@ -439,23 +445,59 @@
   <div id="wrecked-overlay" class="overlay" style="display: none;">
     <div class="wrecked-box glass-card">
       <div class="wreck-icon">💥</div>
-      <h1 class="wreck-title">CAR CRASHED!</h1>
-      <p class="wreck-subtitle">Deewar se 5 baar takrane par car crash ho gayi hai! 5/5 Hits sustained.</p>
+      <h1 class="wreck-title">GAME OVER — CAR DESTROYED!</h1>
+      <p class="wreck-subtitle">Deewar se 8 baar takrane par car ka engine destroy ho gaya hai! 8/8 Critical Hits sustained.</p>
+      <div class="wreck-telemetry-row">
+        <div class="wreck-chip"><span class="chip-lbl">DAMAGE SUSTAINED:</span> <span id="wreck-stat-hits" class="chip-val">8/8 HITS (100%)</span></div>
+        <div class="wreck-chip"><span class="chip-lbl">SURVIVAL TIME:</span> <span id="wreck-stat-time" class="chip-val">00:00.0</span></div>
+      </div>
       <div class="wreck-actions">
-        <button id="btn-respawn-repair" class="btn btn-hero btn-pulse">🔧 REPAIR & RESPAWN (WAPAS CHALEN)</button>
-        <button id="btn-watch-ad-respawn" class="btn btn-accent btn-reward-ad"><span class="ad-tag-pill">AD</span> 📺 FREE REPAIR & RESPAWN</button>
+        <button id="btn-respawn-repair" class="btn btn-hero btn-pulse">🔧 REPAIR & RESTART</button>
+        <button id="btn-watch-ad-respawn" class="btn btn-accent btn-reward-ad"><span class="ad-tag-pill">AD</span> 📺 FREE INSTANT REPAIR & RESPAWN</button>
         <button id="btn-wreck-garage" class="btn btn-secondary">BACK TO SHOWROOM</button>
       </div>
     </div>
   </div>
 
-  <!-- PODIUM & WINNER OVERLAY -->
+  <!-- PODIUM & WINNER OVERLAY / RESULTS & POINTS TABLE -->
   <div id="podium-overlay" class="overlay" style="display: none;">
     <div class="podium-box glass-card">
-      <h1 class="trophy-title">🏆 RACE FINISHED!</h1>
-      <div class="winner-list" id="podium-winners-list"></div>
+      <div class="podium-header-badge">🏁 ROUND 1 COMPLETED</div>
+      <h1 class="trophy-title">GAME OVER — RACE FINISHED!</h1>
+      <p class="podium-subtitle">OFFICIAL CIRCUIT TELEMETRY & POINTS STANDINGS</p>
+
+      <!-- 4-Card Telemetry Summary Grid -->
+      <div id="podium-stats-grid" class="stats-summary-grid">
+        <div class="stat-card">
+          <div class="stat-card-icon">⏱️</div>
+          <div class="stat-card-val">00:00.0</div>
+          <div class="stat-card-lbl">COMPLETION TIME</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon">💥</div>
+          <div class="stat-card-val">0/8 (0%)</div>
+          <div class="stat-card-lbl">CAR DAMAGE</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon">⚡</div>
+          <div class="stat-card-val">0 <small>KM/H</small></div>
+          <div class="stat-card-lbl">TOP SPEED</div>
+        </div>
+        <div class="stat-card highlight">
+          <div class="stat-card-icon">🏆</div>
+          <div class="stat-card-val">+0</div>
+          <div class="stat-card-lbl">RACE SCORE / PTS</div>
+        </div>
+      </div>
+
+      <!-- Full Standings Points Table Container -->
+      <div id="podium-table-container" class="podium-table-wrap">
+        <div class="winner-list" id="podium-winners-list"></div>
+      </div>
+
       <div class="podium-actions">
-        <button id="btn-back-lobby" class="btn btn-hero">BACK TO GARAGE</button>
+        <button id="btn-podium-restart" class="btn btn-hero btn-pulse">🔄 PLAY AGAIN (EK OR ROUND)</button>
+        <button id="btn-back-lobby" class="btn btn-secondary">BACK TO GARAGE</button>
       </div>
     </div>
   </div>

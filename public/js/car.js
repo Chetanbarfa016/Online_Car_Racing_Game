@@ -50,9 +50,11 @@ class Car {
     this.driftYawAngle = 0;
     this.velocityHeading = 0;
 
-    // 5-Hit Crash Lifeline / Health System
-    this.maxLives = 5;
-    this.lives = 5;
+    // 8-Hit Crash Lifeline & Engine Power Degradation System
+    this.maxLives = 8;
+    this.lives = 8;
+    this.collisionHits = 0;
+    this.topSpeedRecord = 0;
     this.isWrecked = false;
     this.damageCooldown = 0;
 
@@ -892,9 +894,19 @@ class Car {
   takeDamage(amount = 1, impactPosition = null) {
     if (this.isWrecked) return;
     if (amount < 5 && this.damageCooldown > 0) return;
-    this.damageCooldown = 0.6; // 0.6s cooldown between consecutive wall hits
+    this.damageCooldown = 0.65; // 0.65s cooldown between consecutive wall hits
 
     this.lives = Math.max(0, this.lives - amount);
+    this.collisionHits = (this.collisionHits || 0) + amount;
+
+    // Power degradation: As hits accumulate, engine power (max speed, acceleration, nitro) drops progressively
+    if (this.stats) {
+      const damageRatio = Math.min(1.0, (this.maxLives - this.lives) / this.maxLives);
+      this.maxSpeed = Math.round(this.stats.maxSpeed * (1 - damageRatio * 0.35));
+      this.acceleration = Math.round(this.stats.acceleration * (1 - damageRatio * 0.40));
+      this.nitroMaxSpeed = Math.round(this.stats.nitroMaxSpeed * (1 - damageRatio * 0.25));
+    }
+
     this.emitCrashSparks(impactPosition || this.position);
 
     // Play Crash Impact Sound
@@ -910,8 +922,14 @@ class Car {
 
   repair() {
     this.lives = this.maxLives;
+    this.collisionHits = 0;
     this.isWrecked = false;
     this.damageCooldown = 0;
+    if (this.stats) {
+      this.maxSpeed = this.stats.maxSpeed;
+      this.acceleration = this.stats.acceleration;
+      this.nitroMaxSpeed = this.stats.nitroMaxSpeed;
+    }
     this.clearWreckFire();
   }
 
@@ -1100,6 +1118,9 @@ class Car {
         this.speed = Math.min(0, this.speed + this.deceleration * delta);
       }
     }
+
+    // Record highest top speed achieved during the race
+    this.topSpeedRecord = Math.max(this.topSpeedRecord || 0, Math.abs(Math.round(this.speed)));
 
     if (this.taillightMesh) {
       if (this.isBraking) {
