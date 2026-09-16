@@ -15,6 +15,7 @@ class Game {
 
     this.clock = new THREE.Clock();
     this.cameraMode = 0; // 0: Dynamic Chase, 1: Hood Cam, 2: Orbit/Far Cam
+    this.cameraShake = 0;
 
     this.gameState = 'LOBBY';
     this.raceStartTime = 0;
@@ -627,6 +628,7 @@ class Game {
 
       if (this.localCar.damageCooldown <= 0) {
         this.localCar.takeDamage(1, carPos);
+        this.cameraShake = 0.55;
         if (this.ui) {
           this.ui.updateLifelines(this.localCar.lives, this.localCar.maxLives);
           this.ui.flashDamageEffect();
@@ -658,6 +660,7 @@ class Game {
 
         if (this.localCar.damageCooldown <= 0) {
           this.localCar.takeDamage(1, carPos);
+          this.cameraShake = 0.55;
           if (this.ui) {
             this.ui.updateLifelines(this.localCar.lives, this.localCar.maxLives);
             this.ui.flashDamageEffect();
@@ -720,23 +723,28 @@ class Game {
 
   triggerWreckedScreen() {
     this.gameState = 'WRECKED';
-    this.localCar.isWrecked = true;
-    this.localCar.speed = 0;
-    this.localCar.velocity.set(0, 0, 0);
-    this.localCar.createWreckFire();
+    this.cameraShake = 1.8;
+
+    // Trigger full accident blast, fireball explosion, flying debris & car catapult flip
+    if (this.localCar) {
+      this.localCar.triggerAccidentBlast();
+    }
 
     const elapsed = this.raceStartTime ? (performance.now() - this.raceStartTime) / 1000 : 0;
     const timeStr = this.formatRaceTime(elapsed);
-    const hitsTaken = this.localCar.collisionHits || (this.localCar.maxLives - this.localCar.lives) || 8;
+    const hitsTaken = this.localCar ? (this.localCar.collisionHits || 8) : 8;
 
-    if (this.ui) {
-      this.ui.showWreckedOverlay({
-        hits: hitsTaken,
-        maxHits: this.localCar.maxLives,
-        time: timeStr,
-        damagePercent: 100
-      });
-    }
+    // Allow 1.8s for the player to watch the accident blast, car flip, and flying debris before showing Game Over UI
+    setTimeout(() => {
+      if (this.ui && this.gameState === 'WRECKED') {
+        this.ui.showWreckedOverlay({
+          hits: hitsTaken,
+          maxHits: (this.localCar && this.localCar.maxLives) || 8,
+          time: timeStr,
+          damagePercent: 100
+        });
+      }
+    }, 1800);
   }
 
   restartRace() {
@@ -999,6 +1007,12 @@ class Game {
     if (this.localCar.isBoosting || this.localCar.isDrifting || this.localCar.damageCooldown > 0.5) {
       shakeX = (Math.random() - 0.5) * 0.22;
       shakeY = (Math.random() - 0.5) * 0.22;
+    }
+
+    if (this.cameraShake > 0) {
+      shakeX += (Math.random() - 0.5) * this.cameraShake * 1.6;
+      shakeY += (Math.random() - 0.5) * this.cameraShake * 1.6;
+      this.cameraShake = Math.max(0, this.cameraShake - delta * 2.2);
     }
 
     if (this.cameraMode === 0) {

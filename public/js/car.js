@@ -78,12 +78,24 @@ class Car {
     this.activeSpoilerMesh = null;
     this.exhaustLight = null;
 
-    // Particle Systems (Tire Smoke, Crash Sparks, Fire/Wreck Smoke)
+    // Particle Systems (Tire Smoke, Crash Sparks, Fire/Wreck Smoke & Accident Blast)
     this.smokePool = [];
     this.maxSmoke = 50;
     this.sparkPool = [];
     this.maxSparks = 40;
     this.wreckParticles = [];
+    this.blastFireballs = [];
+    this.blastShockwaves = [];
+    this.blastDebris = [];
+
+    // Accident & Crash Blast Animation Dynamics
+    this.collisionJolt = 0;
+    this.isExploding = false;
+    this.wreckJumpVelocityY = 0;
+    this.wreckRollSpeed = 0;
+    this.wreckPitchSpeed = 0;
+    this.wreckYawSpeed = 0;
+    this.wreckSkidSpeed = 0;
 
     this.buildCarModel();
     this.createNameTag();
@@ -907,16 +919,139 @@ class Car {
       this.nitroMaxSpeed = Math.round(this.stats.nitroMaxSpeed * (1 - damageRatio * 0.25));
     }
 
+    // Minor accident physics animation on EVERY wall hit (jolt, body tilt, suspension bump)
+    const impactDir = (Math.random() > 0.5) ? 1 : -1;
+    this.rollAngle += impactDir * 0.35; // Rapid car body roll tilt
+    this.pitchAngle += -0.18; // Suspension dive
+    this.collisionJolt = 0.45; // Jolt timer
+    this.bodyGroup.position.y += 0.25; // Curb / barrier hop
+    this.rotation.y += impactDir * 0.08; // Steering deflection kick
+
     this.emitCrashSparks(impactPosition || this.position);
 
     // Play Crash Impact Sound
     this.playCrashSound();
 
+    // 8th Hit / Game Over: VIOLENT CRASH BLAST & ACCIDENT FLIP
     if (this.lives <= 0) {
-      this.isWrecked = true;
-      this.speed = 0;
-      this.velocity.set(0, 0, 0);
-      this.createWreckFire();
+      this.triggerAccidentBlast();
+    }
+  }
+
+  triggerAccidentBlast() {
+    this.isWrecked = true;
+    this.isExploding = true;
+
+    // Catapult tumble physics (Car flips and skids across the track)
+    this.wreckJumpVelocityY = 7.5;
+    const tumbleSide = (Math.random() > 0.5) ? 1 : -1;
+    this.wreckRollSpeed = tumbleSide * (Math.PI * 3.5);
+    this.wreckPitchSpeed = (Math.random() - 0.5) * 6.0;
+    this.wreckYawSpeed = tumbleSide * 7.0;
+    this.wreckSkidSpeed = Math.max(35, Math.abs(this.speed) * 0.7);
+
+    // Audio explosion blast
+    this.playExplosionSound();
+
+    this.clearAccidentBlast();
+
+    const carPos = this.position.clone();
+
+    // 1. Core Expanding Fireball Spheres (Flash + Fireburst)
+    const blastColors = [0xffffff, 0xffea00, 0xff5500, 0xff1100, 0xd946ef];
+    for (let i = 0; i < 6; i++) {
+      const geo = new THREE.SphereGeometry(0.8 + i * 0.3, 10, 10);
+      const mat = new THREE.MeshBasicMaterial({
+        color: blastColors[i % blastColors.length],
+        transparent: true,
+        opacity: 0.95,
+        blending: THREE.AdditiveBlending
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.copy(carPos).add(new THREE.Vector3((Math.random() - 0.5) * 1.5, 0.8 + Math.random() * 1.2, (Math.random() - 0.5) * 1.5));
+      this.scene.add(mesh);
+      this.blastFireballs.push({
+        mesh: mesh,
+        scale: 1.0,
+        maxScale: 3.5 + Math.random() * 2.5,
+        life: 0,
+        maxLife: 0.75 + Math.random() * 0.35,
+        growthRate: 8.0 + Math.random() * 6.0
+      });
+    }
+
+    // 2. Expanding Ground Shockwave Ring
+    const ringGeo = new THREE.RingGeometry(0.5, 1.2, 24);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0xff7700,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.9,
+      blending: THREE.AdditiveBlending
+    });
+    const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+    ringMesh.rotation.x = -Math.PI / 2;
+    ringMesh.position.copy(carPos).setY(0.48);
+    this.scene.add(ringMesh);
+    this.blastShockwaves.push({
+      mesh: ringMesh,
+      scale: 1.0,
+      maxScale: 12.0,
+      life: 0,
+      maxLife: 0.7
+    });
+
+    // 3. Flying Car Debris / Shrapnel (Metal pieces, wheels, bumper fragments)
+    const debrisMats = [
+      new THREE.MeshStandardMaterial({ color: 0x111317, roughness: 0.3, metalness: 0.8 }),
+      new THREE.MeshStandardMaterial({ color: this.color || 0xff2a5f, roughness: 0.2, metalness: 0.8 }),
+      new THREE.MeshBasicMaterial({ color: 0xffea00 }),
+      new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.5, metalness: 0.9 })
+    ];
+
+    for (let i = 0; i < 36; i++) {
+      const isLarge = i < 4;
+      const geo = isLarge 
+        ? new THREE.CylinderGeometry(0.35, 0.35, 0.28, 8) 
+        : new THREE.BoxGeometry(0.2 + Math.random() * 0.3, 0.15 + Math.random() * 0.2, 0.2 + Math.random() * 0.3);
+      const mat = debrisMats[i % debrisMats.length];
+      const m = new THREE.Mesh(geo, mat);
+      m.position.copy(carPos).add(new THREE.Vector3((Math.random() - 0.5) * 1.2, 0.8, (Math.random() - 0.5) * 1.2));
+      this.scene.add(m);
+
+      const angle = Math.random() * Math.PI * 2;
+      const horizSpd = 8 + Math.random() * 18;
+      const vel = new THREE.Vector3(
+        Math.cos(angle) * horizSpd,
+        7 + Math.random() * 12,
+        Math.sin(angle) * horizSpd
+      );
+      this.blastDebris.push({
+        mesh: m,
+        velocity: vel,
+        rotSpeed: new THREE.Vector3((Math.random() - 0.5) * 14, (Math.random() - 0.5) * 14, (Math.random() - 0.5) * 14),
+        life: 0,
+        maxLife: 3.0
+      });
+    }
+
+    // 4. Continuous Heavy Fire & Black Smoke Plume
+    this.createWreckFire();
+  }
+
+  clearAccidentBlast() {
+    this.clearWreckFire();
+    if (this.blastFireballs) {
+      this.blastFireballs.forEach(b => this.scene.remove(b.mesh));
+      this.blastFireballs = [];
+    }
+    if (this.blastShockwaves) {
+      this.blastShockwaves.forEach(s => this.scene.remove(s.mesh));
+      this.blastShockwaves = [];
+    }
+    if (this.blastDebris) {
+      this.blastDebris.forEach(d => this.scene.remove(d.mesh));
+      this.blastDebris = [];
     }
   }
 
@@ -924,25 +1059,36 @@ class Car {
     this.lives = this.maxLives;
     this.collisionHits = 0;
     this.isWrecked = false;
+    this.isExploding = false;
     this.damageCooldown = 0;
+    this.collisionJolt = 0;
+    this.wreckJumpVelocityY = 0;
+    this.wreckRollSpeed = 0;
+    this.wreckPitchSpeed = 0;
+    this.wreckYawSpeed = 0;
+    this.wreckSkidSpeed = 0;
+    this.bodyGroup.rotation.set(0, 0, 0);
+    this.bodyGroup.position.set(0, 0, 0);
+    this.position.y = 0.46;
+
     if (this.stats) {
       this.maxSpeed = this.stats.maxSpeed;
       this.acceleration = this.stats.acceleration;
       this.nitroMaxSpeed = this.stats.nitroMaxSpeed;
     }
-    this.clearWreckFire();
+    this.clearAccidentBlast();
   }
 
   createWreckFire() {
     this.clearWreckFire();
     // Create Fire and Smoke Emitter on engine
     const colors = [0xff2200, 0xff7700, 0x111111, 0x333333];
-    for (let i = 0; i < 24; i++) {
-      const geo = new THREE.SphereGeometry(0.3 + Math.random() * 0.25, 6, 6);
+    for (let i = 0; i < 28; i++) {
+      const geo = new THREE.SphereGeometry(0.3 + Math.random() * 0.35, 6, 6);
       const mat = new THREE.MeshBasicMaterial({
         color: colors[i % colors.length],
         transparent: true,
-        opacity: 0.8
+        opacity: 0.85
       });
       const m = new THREE.Mesh(geo, mat);
       m.position.copy(this.position).add(new THREE.Vector3(0, 0.6, 0.5));
@@ -1003,6 +1149,63 @@ class Car {
         wp.mesh.material.opacity = Math.max(0, 1 - (wp.offsetY / 3.0));
       });
     }
+
+    // Expanding Fireball Spheres
+    if (this.blastFireballs && this.blastFireballs.length > 0) {
+      for (let i = this.blastFireballs.length - 1; i >= 0; i--) {
+        const b = this.blastFireballs[i];
+        b.life += delta;
+        b.scale += b.growthRate * delta;
+        b.mesh.scale.set(b.scale, b.scale, b.scale);
+        b.mesh.material.opacity = Math.max(0, 1 - (b.life / b.maxLife));
+        if (b.life >= b.maxLife) {
+          this.scene.remove(b.mesh);
+          this.blastFireballs.splice(i, 1);
+        }
+      }
+    }
+
+    // Expanding Ground Shockwaves
+    if (this.blastShockwaves && this.blastShockwaves.length > 0) {
+      for (let i = this.blastShockwaves.length - 1; i >= 0; i--) {
+        const s = this.blastShockwaves[i];
+        s.life += delta;
+        s.scale += 18 * delta;
+        s.mesh.scale.set(s.scale, s.scale, 1);
+        s.mesh.material.opacity = Math.max(0, (1 - s.life / s.maxLife) * 0.9);
+        if (s.life >= s.maxLife) {
+          this.scene.remove(s.mesh);
+          this.blastShockwaves.splice(i, 1);
+        }
+      }
+    }
+
+    // Flying Shrapnel & Debris
+    if (this.blastDebris && this.blastDebris.length > 0) {
+      for (let i = this.blastDebris.length - 1; i >= 0; i--) {
+        const d = this.blastDebris[i];
+        d.life += delta;
+        d.velocity.y -= 25 * delta; // Gravity
+        d.mesh.position.addScaledVector(d.velocity, delta);
+        d.mesh.rotation.x += d.rotSpeed.x * delta;
+        d.mesh.rotation.y += d.rotSpeed.y * delta;
+        d.mesh.rotation.z += d.rotSpeed.z * delta;
+
+        // Ground bounce & friction
+        if (d.mesh.position.y <= 0.15) {
+          d.mesh.position.y = 0.15;
+          d.velocity.y = -d.velocity.y * 0.35;
+          d.velocity.x *= 0.65;
+          d.velocity.z *= 0.65;
+          d.rotSpeed.multiplyScalar(0.7);
+        }
+
+        if (d.life >= d.maxLife) {
+          this.scene.remove(d.mesh);
+          this.blastDebris.splice(i, 1);
+        }
+      }
+    }
   }
 
   update(delta, input) {
@@ -1010,7 +1213,46 @@ class Car {
       this.damageCooldown -= delta;
     }
 
+    // Handle collision jolt decay on every hit (Halka animation)
+    if (this.collisionJolt > 0) {
+      this.collisionJolt -= delta;
+      const shudder = Math.sin(performance.now() * 0.06) * 0.05 * (this.collisionJolt / 0.45);
+      this.bodyGroup.position.x = shudder;
+    } else {
+      this.bodyGroup.position.x = 0;
+    }
+
     if (this.isWrecked) {
+      if (this.isExploding) {
+        // Tumble / flip car body
+        this.bodyGroup.rotation.z += this.wreckRollSpeed * delta;
+        this.bodyGroup.rotation.x += this.wreckPitchSpeed * delta;
+        this.rotation.y += this.wreckYawSpeed * delta;
+
+        // Dampen tumble speeds
+        this.wreckRollSpeed *= Math.max(0, 1 - delta * 2.5);
+        this.wreckPitchSpeed *= Math.max(0, 1 - delta * 2.5);
+        this.wreckYawSpeed *= Math.max(0, 1 - delta * 2.5);
+
+        // Vertical gravity catapult
+        this.wreckJumpVelocityY -= 22 * delta;
+        this.position.y += this.wreckJumpVelocityY * delta;
+        if (this.position.y <= 0.46) {
+          this.position.y = 0.46;
+          this.wreckJumpVelocityY = -this.wreckJumpVelocityY * 0.25; // bounce slightly on asphalt
+        }
+
+        // Forward skid momentum
+        if (this.wreckSkidSpeed > 0) {
+          const fwd = new THREE.Vector3(Math.sin(this.rotation.y), 0, Math.cos(this.rotation.y));
+          this.position.addScaledVector(fwd, this.wreckSkidSpeed * delta);
+          this.wreckSkidSpeed = Math.max(0, this.wreckSkidSpeed - 35 * delta);
+        }
+
+        this.mesh.position.copy(this.position);
+        this.mesh.rotation.y = this.rotation.y;
+      }
+
       this.speed = 0;
       this.updateParticles(delta);
       return;
@@ -1358,6 +1600,48 @@ class Car {
       osc.start();
       osc.stop(this.audioCtx.currentTime + 0.35);
     } catch (e) {}
+  }
+
+  playExplosionSound() {
+    if (!this.audioCtx) return;
+    try {
+      const now = this.audioCtx.currentTime;
+      // 1. Deep Sub-Bass Detonation Kick
+      const osc = this.audioCtx.createOscillator();
+      const gain = this.audioCtx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(160, now);
+      osc.frequency.exponentialRampToValueAtTime(20, now + 0.9);
+      gain.gain.setValueAtTime(0.85, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+      osc.connect(gain);
+      gain.connect(this.audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 1.2);
+
+      // 2. High-Impact White Noise Blast Distortion
+      const bufferSize = Math.floor(this.audioCtx.sampleRate * 0.8);
+      const buffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
+      const output = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        output[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.audioCtx.sampleRate * 0.2));
+      }
+      const noise = this.audioCtx.createBufferSource();
+      noise.buffer = buffer;
+      const filter = this.audioCtx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(2200, now);
+      filter.frequency.exponentialRampToValueAtTime(140, now + 0.75);
+
+      const noiseGain = this.audioCtx.createGain();
+      noiseGain.gain.setValueAtTime(0.7, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+
+      noise.connect(filter);
+      filter.connect(noiseGain);
+      noiseGain.connect(this.audioCtx.destination);
+      noise.start(now);
+    } catch(e) {}
   }
 
   updateAudio() {
